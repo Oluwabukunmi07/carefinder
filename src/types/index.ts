@@ -1,4 +1,12 @@
-export type Specialty = "emergency" | "maternity" | "pediatric" | "dental";
+export type Specialty =
+  | "emergency"
+  | "maternity"
+  | "pediatric"
+  | "dental"
+  | "cardiology"
+  | "surgery"
+  | "ophthalmology"
+  | "psychiatry";
 
 export type Ownership = "public" | "private";
 
