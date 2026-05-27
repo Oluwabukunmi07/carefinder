@@ -5,6 +5,7 @@ import SearchBar from "../components/SearchBar";
 import HospitalCard from "../components/HospitalCard";
 import type { SearchFIlters, Hospital } from "../types";
 import { supabase } from "../lib/supabase";
+import HospitalMap from "../components/HospitalMap";
 
 export default function Home() {
   const [filters, setFilters] = useState<SearchFIlters>({
@@ -38,6 +39,7 @@ export default function Home() {
 
     if (error) console.error(error);
     else setHospitals(data as Hospital[]);
+    console.log("Fetched hospitals:", data);
     setLoading(false);
   }
 
@@ -61,17 +63,24 @@ export default function Home() {
         </p>
         <SearchBar onSearch={handleSearch} />
 
-        {loading ? (
-          <p className="text-center text-gray-400">Loading hospitals...</p>
-        ) : hospitals.length === 0 ? (
-          <p className="text-center text-gray-400">No hospitals found.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {hospitals.map((hospital) => (
-              <HospitalCard key={hospital.id} hospital={hospital} />
-            ))}
+        <div className="flex gap-4 mb-6">
+          <div className="w-1/2">
+            <HospitalMap hospitals={hospitals} />
           </div>
-        )}
+          <div className="w-1/2 overflow-y-auto" style={{ height: "450px" }}>
+            {loading ? (
+              <p className="text-center text-gray-400">Loading hospitals...</p>
+            ) : hospitals.length === 0 ? (
+              <p className="text-center text-gray-400">No hospitals found.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {hospitals.map((hospital) => (
+                  <HospitalCard key={hospital.id} hospital={hospital} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );

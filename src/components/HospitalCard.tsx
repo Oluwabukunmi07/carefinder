@@ -1,5 +1,5 @@
 import type { Hospital } from "../types";
-import { Phone, MapPin, Building2 } from "lucide-react";
+import { Phone, MapPin } from "lucide-react";
 
 interface HospitalCardProps {
   hospital: Hospital;
