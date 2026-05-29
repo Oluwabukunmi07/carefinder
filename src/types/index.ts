@@ -28,9 +28,12 @@ export interface Hospital {
   created_at: string;
 }
 
-export interface SearchFIlters {
+export interface SearchFilters {
   query: string;
   specialty: Specialty | "";
   ownership: Ownership | "";
   city: string;
+  radius?: number;
+  userLat?: number;
+  userLng?: number;
 }

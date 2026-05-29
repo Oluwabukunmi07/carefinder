@@ -2,19 +2,51 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
-import type { SearchFIlters, Specialty } from "../types";
+import type { SearchFilters, Specialty } from "../types";
 
 interface SearchBarProps {
-  onSearch: (filters: SearchFIlters) => void;
+  onSearch: (filters: SearchFilters) => void;
 }
 
 export default function SearchBar({ onSearch }: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [specialty, setSpecialty] = useState<Specialty | "">("");
   const [ownership, setOwnership] = useState<"" | "public" | "private">("");
+  const [radius, setRadius] = useState<number>(10);
+  const [locating, setLocating] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  const getUserLocation = () => {
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setLocating(false);
+      },
+      (error) => {
+        console.error(error);
+        setLocating(false);
+        alert("Could not get your location. Please enable location access.");
+      },
+    );
+  };
 
   const handleSearch = () => {
-    onSearch({ query, specialty, ownership, city: "" });
+    onSearch({
+      query,
+      specialty,
+      ownership,
+      city: "",
+      radius: userLocation ? radius : undefined,
+      userLat: userLocation?.lat,
+      userLng: userLocation?.lng,
+    });
   };
 
   return (
@@ -64,6 +96,32 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
           <option value="public">Public</option>
           <option value="private">Private</option>
         </select>
+
+        <div className="flex-gap mt-2 items-center">
+          <button
+            onClick={getUserLocation}
+            className="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-200"
+          >
+            {locating ? "Getting location..." : "Use my location"}
+          </button>
+          {userLocation !== null && (
+            <>
+              <span className="text-sm text-gray-500">Radius:</span>
+              <select
+                aria-label="Select-radius"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                value={radius}
+                onChange={(e) => setRadius(Number(e.target.value))}
+              >
+                <option value={5}>5 km</option>
+                <option value={10}>10 km</option>
+                <option value={20}>20 km</option>
+                <option value={50}>50 km</option>
+              </select>
+              <span className="text-sm text-green-600">Location set!</span>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

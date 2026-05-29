@@ -69,8 +69,19 @@ export default function HospitalMap({ hospitals }: HospitalMapProps) {
   return (
     <div
       ref={mapContainer}
-      className="w-full rounded-xl overflow-hidden"
-      style={{ height: "450px" }}
+      className="w-full rounded-xl overflow-hidden hospital-map-container"
     />
   );
+}
+
+const styles = `
+  .hospital-map-container {
+    height: 450px;
+  }
+`;
+
+if (typeof document !== "undefined") {
+  const styleSheet = document.createElement("style");
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
 }
