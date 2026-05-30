@@ -1,19 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import SearchBar from "../components/SearchBar";
 import HospitalCard from "../components/HospitalCard";
 import HospitalMap from "../components/HospitalMap";
 import type { SearchFilters, Hospital } from "../types";
 import { supabase } from "../lib/supabase";
+import Papa from "papaparse";
+import { useSearchParams } from "next/navigation";
 
-export default function Home() {
-  const [filters, setFilters] = useState<SearchFilters>({
-    query: "",
-    specialty: "",
-    ownership: "",
-    city: "",
-  });
+function HomeContent() {
+  const searchParams = useSearchParams();
+
+  const [filters, setFilters] = useState<SearchFilters>(() => ({
+    query: searchParams.get("query") || "",
+    specialty: (searchParams.get("specialty") ||
+      "") as SearchFilters["specialty"],
+    ownership: (searchParams.get("ownership") ||
+      "") as SearchFilters["ownership"],
+    city: searchParams.get("city") || "",
+    radius: searchParams.get("radius")
+      ? Number(searchParams.get("radius"))
+      : undefined,
+  }));
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -68,9 +77,49 @@ export default function Home() {
     fetchHospitals();
   }, [filters]);
 
+  const exportCSV = () => {
+    if (hospitals.length === 0) return;
+
+    const csvData = hospitals.map((h) => ({
+      Name: h.name,
+      Address: h.address,
+      City: h.city,
+      LGA: h.lga,
+      State: h.state,
+      Phone: h.phone,
+      Email: h.email || "",
+      Specialties: h.specialty.join(", "),
+      Ownership: h.ownership,
+      Rating: h.rating,
+    }));
+
+    const csv = Papa.unparse(csvData);
+    const blob = new Blob([csv], { type: "text/csv " });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `hospitals-${filters.city || "nigeria"}-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const shareLink = () => {
+    const params = new URLSearchParams();
+
+    if (filters.query) params.set("query", filters.query);
+    if (filters.specialty) params.set("specialty", filters.specialty);
+    if (filters.ownership) params.set("ownership", filters.ownership);
+    if (filters.city) params.set("city", filters.city);
+    if (filters.radius) params.set("radius", filters.radius.toString());
+
+    const url = `${window.location.origin}?${params.toString()}`;
+    navigator.clipboard.writeText(url);
+    alert("Link copied to clipboard!");
+  };
+
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+    <main className="min-h-screen bg-gray-50 overflow-x-hidden">
+      <div className="max-w-5xl mx-auto px-6 py-8">
         <h1 className="text-4xl font-bold text-center text-blue-700 mb-2">
           Carefinder 🏥
         </h1>
@@ -78,6 +127,26 @@ export default function Home() {
           Find hospitals near you across Nigeria
         </p>
         <SearchBar onSearch={handleSearch} />
+        <div className="flex justify-between items-center mb-4">
+          <p className="text-sm text-gray-50">
+            {hospitals.length} hospital{hospitals.length !== 1 ? "s" : ""} found
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={exportCSV}
+              disabled={hospitals.length === 0}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={shareLink}
+              className="bg-blue-600 text-white py-4 py-2 rounded-lg text-sm hover:bg-blue-700 w-24"
+            >
+              Share
+            </button>
+          </div>
+        </div>
         <div className="flex gap-4 mb-6">
           <div className="w-1/2">
             <HospitalMap hospitals={hospitals} />
@@ -98,5 +167,15 @@ export default function Home() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={<div className="text-center text-gray-400">Loading...</div>}
+    >
+      <HomeContent />
+    </Suspense>
   );
 }

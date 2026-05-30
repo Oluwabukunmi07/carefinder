@@ -22,7 +22,7 @@ export interface Hospital {
   specialty: Specialty[];
   ownership: Ownership;
   visiting_hours?: string;
-  ratin: number;
+  rating: number;
   image_url?: string;
   location?: unknown;
   created_at: string;
