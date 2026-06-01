@@ -7,6 +7,7 @@ import { ArrowLeft, Mail, MapPin, Phone, Star, Clock } from "lucide-react";
 import { supabase } from "../../../lib/supabase";
 import HospitalMap from "../../../components/HospitalMap";
 import type { Hospital } from "../../../types";
+import ReviewSection from "../../../components/ReviewSection";
 
 export default function HospitalDetailPage() {
   const params = useParams();
@@ -37,14 +38,10 @@ export default function HospitalDetailPage() {
     fetchHospital();
   }, [id]);
 
-  const latitude = Array.isArray(
-    hospital?.location?.coordinates,
-  )
+  const latitude = Array.isArray(hospital?.location?.coordinates)
     ? hospital?.location?.coordinates?.[1]
     : undefined;
-  const longitude = Array.isArray(
-    hospital?.location?.coordinates,
-  )
+  const longitude = Array.isArray(hospital?.location?.coordinates)
     ? hospital?.location?.coordinates?.[0]
     : undefined;
 
@@ -171,9 +168,7 @@ export default function HospitalDetailPage() {
 
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <Star size={16} className="text-yellow-500" />
-              <span>
-                Rating: {hospital.rating ?? "—"}
-              </span>
+              <span>Rating: {hospital.rating ?? "—"}</span>
             </div>
           </section>
 
@@ -209,6 +204,8 @@ export default function HospitalDetailPage() {
             </div>
           </aside>
         </div>
+
+        <ReviewSection hospitalId={hospital.id} />
       </div>
     </main>
   );
