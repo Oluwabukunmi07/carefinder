@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import SearchBar from "../components/SearchBar";
 import HospitalCard from "../components/HospitalCard";
 import HospitalMap from "../components/HospitalMap";
+import EmailShareDialog from "../components/EmailShareDialog";
 import type { SearchFilters, Hospital } from "../types";
 import { supabase } from "../lib/supabase";
 import Papa from "papaparse";
@@ -26,6 +27,10 @@ function HomeContent() {
   }));
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(false);
+  const [emailShareOpen, setEmailShareOpen] = useState(false);
+  const [origin] = useState(() =>
+    typeof window !== "undefined" ? window.location.origin : "",
+  );
 
   const handleSearch = (newFilters: SearchFilters) => {
     setFilters(newFilters);
@@ -133,46 +138,68 @@ function HomeContent() {
     alert("Link copied to clipboard!");
   };
 
+  const currentShareLink = useMemo(() => {
+    const params = new URLSearchParams();
+
+    if (filters.query) params.set("query", filters.query);
+    if (filters.specialty) params.set("specialty", filters.specialty);
+    if (filters.ownership) params.set("ownership", filters.ownership);
+    if (filters.city) params.set("city", filters.city);
+    if (filters.lga) params.set("lga", filters.lga);
+    if (filters.radius) params.set("radius", filters.radius.toString());
+
+    return origin ? `${origin}?${params.toString()}` : `/?${params.toString()}`;
+  }, [filters, origin]);
+
   return (
     <main className="min-h-screen bg-gray-50 overflow-x-hidden">
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <h1 className="text-4xl font-bold text-center text-blue-700 mb-2">
-          Carefinder
-        </h1>
-        <p className="text-center text-gray-500 mb-8">
-          Find hospitals near you across Nigeria
-        </p>
+      <div className="max-w-5xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-blue-700 mb-2">
+            Carefinder
+          </h1>
+          <p className="text-sm sm:text-base text-gray-500">
+            Find hospitals near you across Nigeria
+          </p>
+        </div>
 
         <SearchBar onSearch={handleSearch} />
 
-        <div className="flex justify-between items-center mb-4">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-gray-600">
             {hospitals.length} hospital{hospitals.length !== 1 ? "s" : ""} found
           </p>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={exportCSV}
               disabled={hospitals.length === 0}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
             >
               Export CSV
             </button>
             <button
               onClick={shareLink}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 w-24"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 w-full sm:w-24"
             >
               Share
+            </button>
+            <button
+              onClick={() => setEmailShareOpen(true)}
+              disabled={hospitals.length === 0}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+            >
+              Email
             </button>
           </div>
         </div>
 
-        <div className="flex gap-4 mb-6 flex-col lg:flex-row">
+        <div className="mb-6 grid gap-4 lg:grid-cols-2">
           <div className="w-full lg:w-1/2">
             <HospitalMap hospitals={hospitals} />
           </div>
 
-          <div className="w-full lg:w-1/2 overflow-y-auto h-[450px]">
+          <div className="w-full lg:w-1/2 overflow-y-auto max-h-[420px] sm:max-h-[450px]">
             {loading ? (
               <p className="text-center text-gray-400">Loading hospitals...</p>
             ) : hospitals.length === 0 ? (
@@ -186,6 +213,12 @@ function HomeContent() {
             )}
           </div>
         </div>
+        <EmailShareDialog
+          hospitals={hospitals}
+          shareLink={currentShareLink}
+          open={emailShareOpen}
+          onClose={() => setEmailShareOpen(false)}
+        />
       </div>
     </main>
   );

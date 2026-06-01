@@ -56,10 +56,16 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white rounded-xl shadow-md p-8 w-full max-w-md">
-        <h1 className="text-xl font-bold text-blue-700 mb-2">Admin Login</h1>
-        <p className="text-gray-500 text-sm mb-6">Carefinder Admin Dashboard</p>
+    <main className="min-h-[calc(100vh-65px)] bg-gray-50 px-4 py-8 sm:px-6 flex items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8 w-full max-w-sm sm:max-w-md">
+        <h1 className="text-2xl font-bold text-blue-700 mb-2">Admin Login</h1>
+        <p className="text-gray-500 text-sm mb-2">
+          Carefinder Admin Dashboard
+        </p>
+        <p className="text-gray-400 text-xs mb-6">
+          Public visitors do not need an account. Admins sign in here to manage
+          hospital records.
+        </p>
 
         {error && (
           <p className="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded-lg">
@@ -85,7 +91,7 @@ export default function LoginPage() {
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? "Logging in..." : "Login"}
           </button>

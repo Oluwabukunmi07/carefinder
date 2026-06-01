@@ -54,7 +54,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
 
   return (
     <div className="bg-white rounded-xl shadow p-4 mb-8">
-      <div className="flex gap-2 mb-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center mb-3">
         <input
           type="text"
           placeholder="Search by hospital name or city..."
@@ -64,18 +64,18 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         />
         <button
           onClick={handleSearch}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700 w-full sm:w-auto"
         >
           <Search size={16} />
           Search
         </button>
-        </div>
+      </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <input
           type="text"
           placeholder="City"
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 min-w-[140px]"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full"
           value={city}
           onChange={(e) => setCity(e.target.value)}
         />
@@ -83,14 +83,14 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         <input
           type="text"
           placeholder="LGA"
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 min-w-[140px]"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full"
           value={lga}
           onChange={(e) => setLga(e.target.value)}
         />
 
         <select
           aria-label="Filter by specialty"
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full"
           value={specialty}
           onChange={(e) => setSpecialty(e.target.value as Specialty | "")}
         >
@@ -107,7 +107,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
 
         <select
           aria-label="Filter by ownership"
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full"
           value={ownership}
           onChange={(e) =>
             setOwnership(e.target.value as "" | "public" | "private")
@@ -118,7 +118,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
           <option value="private">Private</option>
         </select>
 
-        <div className="flex gap-2 items-center mt-2 flex-wrap">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           <button
             onClick={getUserLocation}
             className="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-200"

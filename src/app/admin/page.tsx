@@ -46,11 +46,19 @@ export default function AdminPage() {
   if (adminLoading) return <p className="text-center mt-20">Loading...</p>;
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-700">Admin Dashboard</h1>
-          <div className="flex gap-3">
+    <main className="min-h-[calc(100vh-65px)] bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-blue-700">
+              Admin Dashboard
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Manage hospital entries, edits, and deletes.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
             <button
               onClick={() => router.push("/admin/hospitals/new")}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
@@ -73,7 +81,49 @@ export default function AdminPage() {
           {hospitals.length} hospitals in database
         </p>
 
-        <div className="bg-white rounded-xl shadow overflow-hidden">
+        <div className="space-y-4 md:hidden">
+          {hospitals.map((h) => (
+            <div key={h.id} className="bg-white rounded-2xl shadow p-4">
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <div>
+                  <h2 className="font-semibold text-gray-900">{h.name}</h2>
+                  <p className="text-sm text-gray-500">
+                    {h.city}, {h.state}
+                  </p>
+                </div>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    h.ownership === "public"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-purple-100 text-purple-700"
+                  }`}
+                >
+                  {h.ownership}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                <span>Rating: {h.rating ?? "—"}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => router.push(`/admin/hospitals/${h.id}/edit`)}
+                  className="bg-yellow-400 text-white px-3 py-2 rounded-lg text-sm hover:bg-yellow-500"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => deleteHospital(h.id)}
+                  disabled={deleting === h.id}
+                  className="bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 disabled:opacity-50"
+                >
+                  {deleting === h.id ? "..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="hidden overflow-hidden rounded-xl bg-white shadow md:block">
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-gray-600">
               <tr>

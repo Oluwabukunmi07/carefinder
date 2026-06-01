@@ -82,7 +82,7 @@ export default function HospitalMap({ hospitals }: HospitalMapProps) {
   return (
     <div
       ref={mapContainer}
-      className="w-full h-[450px] rounded-xl overflow-hidden"
+      className="w-full h-[320px] sm:h-[380px] md:h-[450px] rounded-xl overflow-hidden"
     />
   );
 }
