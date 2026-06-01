@@ -19,6 +19,7 @@ function HomeContent() {
     ownership: (searchParams.get("ownership") ||
       "") as SearchFilters["ownership"],
     city: searchParams.get("city") || "",
+    lga: searchParams.get("lga") || "",
     radius: searchParams.get("radius")
       ? Number(searchParams.get("radius"))
       : undefined,
@@ -33,6 +34,7 @@ function HomeContent() {
   useEffect(() => {
     const fetchHospitals = async () => {
       setLoading(true);
+
       try {
         let data;
 
@@ -45,30 +47,43 @@ function HomeContent() {
               radius_km: filters.radius,
             },
           );
+
           if (error) throw error;
           data = radiusData;
         } else {
           let query = supabase.from("hospitals").select("*");
+
           if (filters.query) {
-            query = query.ilike("name", `%${filters.query}%`);
+            query = query.or(
+              `name.ilike.%${filters.query}%,city.ilike.%${filters.query}%,lga.ilike.%${filters.query}%`,
+            );
           }
+
           if (filters.specialty) {
             query = query.contains("specialty", [filters.specialty]);
           }
+
           if (filters.ownership) {
             query = query.eq("ownership", filters.ownership);
           }
+
           if (filters.city) {
             query = query.ilike("city", `%${filters.city}%`);
           }
+
+          if (filters.lga) {
+            query = query.ilike("lga", `%${filters.lga}%`);
+          }
+
           const { data: queryData, error } = await query;
           if (error) throw error;
           data = queryData;
         }
 
         setHospitals(data as Hospital[]);
-      } catch (error) {
-        console.error(error);
+      } catch (error: unknown) {
+        console.error("Full error:", JSON.stringify(error));
+        console.error("Error string:", String(error));
       } finally {
         setLoading(false);
       }
@@ -94,7 +109,7 @@ function HomeContent() {
     }));
 
     const csv = Papa.unparse(csvData);
-    const blob = new Blob([csv], { type: "text/csv " });
+    const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -110,6 +125,7 @@ function HomeContent() {
     if (filters.specialty) params.set("specialty", filters.specialty);
     if (filters.ownership) params.set("ownership", filters.ownership);
     if (filters.city) params.set("city", filters.city);
+    if (filters.lga) params.set("lga", filters.lga);
     if (filters.radius) params.set("radius", filters.radius.toString());
 
     const url = `${window.location.origin}?${params.toString()}`;
@@ -121,16 +137,19 @@ function HomeContent() {
     <main className="min-h-screen bg-gray-50 overflow-x-hidden">
       <div className="max-w-5xl mx-auto px-6 py-8">
         <h1 className="text-4xl font-bold text-center text-blue-700 mb-2">
-          Carefinder 🏥
+          Carefinder
         </h1>
         <p className="text-center text-gray-500 mb-8">
           Find hospitals near you across Nigeria
         </p>
+
         <SearchBar onSearch={handleSearch} />
+
         <div className="flex justify-between items-center mb-4">
-          <p className="text-sm text-gray-50">
+          <p className="text-sm text-gray-600">
             {hospitals.length} hospital{hospitals.length !== 1 ? "s" : ""} found
           </p>
+
           <div className="flex gap-2">
             <button
               onClick={exportCSV}
@@ -141,17 +160,19 @@ function HomeContent() {
             </button>
             <button
               onClick={shareLink}
-              className="bg-blue-600 text-white py-4 py-2 rounded-lg text-sm hover:bg-blue-700 w-24"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 w-24"
             >
               Share
             </button>
           </div>
         </div>
-        <div className="flex gap-4 mb-6">
-          <div className="w-1/2">
+
+        <div className="flex gap-4 mb-6 flex-col lg:flex-row">
+          <div className="w-full lg:w-1/2">
             <HospitalMap hospitals={hospitals} />
           </div>
-          <div className="w-1/2 overflow-y-auto h-[450px]">
+
+          <div className="w-full lg:w-1/2 overflow-y-auto h-[450px]">
             {loading ? (
               <p className="text-center text-gray-400">Loading hospitals...</p>
             ) : hospitals.length === 0 ? (

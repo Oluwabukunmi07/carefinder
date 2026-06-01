@@ -5,7 +5,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { Hospital } from "../types";
 
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
 interface HospitalMapProps {
   hospitals: Hospital[];
@@ -14,10 +14,14 @@ interface HospitalMapProps {
 export default function HospitalMap({ hospitals }: HospitalMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const markers = useRef<mapboxgl.Marker[]>([]);
 
   useEffect(() => {
-    if (map.current) return;
-    if (!mapContainer.current) return;
+    if (map.current || !mapContainer.current) return;
+
+    if (!mapboxgl.accessToken) {
+      return;
+    }
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -27,21 +31,32 @@ export default function HospitalMap({ hospitals }: HospitalMapProps) {
     });
 
     map.current.addControl(new mapboxgl.NavigationControl());
+
+    return () => {
+      markers.current.forEach((marker) => marker.remove());
+      markers.current = [];
+
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
     if (!map.current) return;
 
-    const markers = document.querySelectorAll(".hospital-marker");
-    markers.forEach((m) => m.remove());
+    markers.current.forEach((marker) => marker.remove());
+    markers.current = [];
 
     hospitals.forEach((hospital) => {
       if (!hospital.location) return;
 
       const loc = hospital.location as {
-        type: string;
-        coordinates: [number, number];
+        type?: string;
+        coordinates?: [number, number];
       };
+
       if (!loc.coordinates) return;
 
       const el = document.createElement("div");
@@ -54,34 +69,20 @@ export default function HospitalMap({ hospitals }: HospitalMapProps) {
         .setPopup(
           new mapboxgl.Popup({ offset: 25 }).setHTML(
             `<h3 style="font-weight:bold">${hospital.name}</h3>
-                    <p>${hospital.city}, ${hospital.state}</p>
-                    <p>${hospital.phone}</p>`,
+             <p>${hospital.city}, ${hospital.state}</p>
+             <p>${hospital.phone}</p>`,
           ),
         )
         .addTo(map.current!);
 
-      marker.getElement().addEventListener("click", () => {
-        marker.togglePopup();
-      });
+      markers.current.push(marker);
     });
   }, [hospitals]);
 
   return (
     <div
       ref={mapContainer}
-      className="w-full rounded-xl overflow-hidden hospital-map-container"
+      className="w-full h-[450px] rounded-xl overflow-hidden"
     />
   );
-}
-
-const styles = `
-  .hospital-map-container {
-    height: 450px;
-  }
-`;
-
-if (typeof document !== "undefined") {
-  const styleSheet = document.createElement("style");
-  styleSheet.textContent = styles;
-  document.head.appendChild(styleSheet);
 }

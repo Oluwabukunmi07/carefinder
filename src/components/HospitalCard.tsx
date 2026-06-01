@@ -1,5 +1,6 @@
-import type { Hospital } from "../types";
+import Link from "next/link";
 import { Phone, MapPin } from "lucide-react";
+import type { Hospital } from "../types";
 
 interface HospitalCardProps {
   hospital: Hospital;
@@ -7,8 +8,11 @@ interface HospitalCardProps {
 
 export default function HospitalCard({ hospital }: HospitalCardProps) {
   return (
-    <div className="bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start mb-2">
+    <Link
+      href={`/hospitals/${hospital.id}`}
+      className="block bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      <div className="flex justify-between items-start mb-2 gap-4">
         <h2 className="text-lg font-semibold text-gray-800">{hospital.name}</h2>
         <span
           className={`text-xs px-2 py-1 rounded font-medium ${
@@ -43,6 +47,6 @@ export default function HospitalCard({ hospital }: HospitalCardProps) {
           </span>
         ))}
       </div>
-    </div>
+    </Link>
   );
 }

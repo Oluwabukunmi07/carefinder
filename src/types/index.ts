@@ -22,9 +22,13 @@ export interface Hospital {
   specialty: Specialty[];
   ownership: Ownership;
   visiting_hours?: string;
+  description?: string;
   rating: number;
   image_url?: string;
-  location?: unknown;
+  location?: {
+    type?: string;
+    coordinates?: [number, number];
+  } | null;
   created_at: string;
 }
 
@@ -33,6 +37,7 @@ export interface SearchFilters {
   specialty: Specialty | "";
   ownership: Ownership | "";
   city: string;
+  lga?: string;
   radius?: number;
   userLat?: number;
   userLng?: number;

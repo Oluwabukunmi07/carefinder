@@ -12,6 +12,8 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [specialty, setSpecialty] = useState<Specialty | "">("");
   const [ownership, setOwnership] = useState<"" | "public" | "private">("");
+  const [city, setCity] = useState("");
+  const [lga, setLga] = useState("");
   const [radius, setRadius] = useState<number>(10);
   const [locating, setLocating] = useState(false);
   const [userLocation, setUserLocation] = useState<{
@@ -42,7 +44,8 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
       query,
       specialty,
       ownership,
-      city: "",
+      city,
+      lga,
       radius: userLocation ? radius : undefined,
       userLat: userLocation?.lat,
       userLng: userLocation?.lng,
@@ -66,8 +69,25 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
           <Search size={16} />
           Search
         </button>
-      </div>
-      <div className="flex gap-2">
+        </div>
+
+      <div className="flex gap-2 flex-wrap">
+        <input
+          type="text"
+          placeholder="City"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 min-w-[140px]"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+        />
+
+        <input
+          type="text"
+          placeholder="LGA"
+          className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1 min-w-[140px]"
+          value={lga}
+          onChange={(e) => setLga(e.target.value)}
+        />
+
         <select
           aria-label="Filter by specialty"
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1"
@@ -84,6 +104,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
           <option value="ophthalmology">Ophthalmology</option>
           <option value="psychiatry">Psychiatry</option>
         </select>
+
         <select
           aria-label="Filter by ownership"
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm flex-1"
@@ -97,18 +118,19 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
           <option value="private">Private</option>
         </select>
 
-        <div className="flex-gap mt-2 items-center">
+        <div className="flex gap-2 items-center mt-2 flex-wrap">
           <button
             onClick={getUserLocation}
             className="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-200"
           >
             {locating ? "Getting location..." : "Use my location"}
           </button>
+
           {userLocation !== null && (
             <>
               <span className="text-sm text-gray-500">Radius:</span>
               <select
-                aria-label="Select-radius"
+                aria-label="Select radius"
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 value={radius}
                 onChange={(e) => setRadius(Number(e.target.value))}
