@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Hospital } from "../../types";
 import { useRequireAdmin } from "../../lib/useRequireAdmin";
 
+
 export default function AdminPage() {
   const adminLoading = useRequireAdmin();
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
@@ -68,7 +69,7 @@ export default function AdminPage() {
             <button
               onClick={async () => {
                 await supabase.auth.signOut();
-                router.replace("/login");
+                router.replace("/admin/login");
               }}
               className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 text-sm"
             >

@@ -21,7 +21,7 @@ export function useRequireAdmin() {
       if (!user) {
         if (shouldRedirect && isMounted) {
           setLoading(false);
-          router.replace("/login");
+          router.replace("/admin/login");
         }
         return;
       }
@@ -34,7 +34,7 @@ export function useRequireAdmin() {
 
       if (error || profile?.role !== "admin") {
         if (isMounted) setLoading(false);
-        router.replace("/login");
+        router.replace("/admin/login");
         return;
       }
 

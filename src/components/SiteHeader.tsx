@@ -16,7 +16,7 @@ export default function SiteHeader() {
             Home
           </Link>
           <Link
-            href="/login"
+            href="/admin/login"
             className="rounded-full bg-blue-600 px-3 py-2 font-medium text-white hover:bg-blue-700"
           >
             Admin Login
