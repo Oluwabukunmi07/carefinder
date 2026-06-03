@@ -8,6 +8,8 @@ import { supabase } from "../../../lib/supabase";
 import HospitalMap from "../../../components/HospitalMap";
 import type { Hospital } from "../../../types";
 import ReviewSection from "../../../components/ReviewSection";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 
 export default function HospitalDetailPage() {
   const params = useParams();
@@ -157,14 +159,14 @@ export default function HospitalDetailPage() {
               </div>
             </div>
 
-            <div className="mb-6">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-2">
-                Description
-              </h2>
-              <p className="text-gray-700 leading-7">
-                {hospital.description || "No description available."}
-              </p>
-            </div>
+            <div
+              className="text-gray-700 leading-7 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{
+                __html: hospital.description
+                  ? DOMPurify.sanitize(marked(hospital.description) as string)
+                  : "No description available.",
+              }}
+            />
 
             <div className="flex items-center gap-2 text-sm text-gray-700">
               <Star size={16} className="text-yellow-500" />

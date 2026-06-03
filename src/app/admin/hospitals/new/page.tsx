@@ -1,5 +1,6 @@
 "use client";
 
+import MDEditor from "@uiw/react-md-editor";
 import { useState } from "react";
 import { supabase } from "../../../../lib/supabase";
 import { useRouter } from "next/navigation";
@@ -22,7 +23,9 @@ const HospitalSchema = z.object({
   longitude: z.number().min(-180).max(180),
 });
 
-type FormErrors = Partial<Record<keyof z.infer<typeof HospitalSchema>, string>> & {
+type FormErrors = Partial<
+  Record<keyof z.infer<typeof HospitalSchema>, string>
+> & {
   specialty?: string;
 };
 
@@ -97,6 +100,7 @@ export default function NewHospitalPage() {
     latitude: "",
     longitude: "",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const set = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -133,11 +137,33 @@ export default function NewHospitalPage() {
     }
 
     setSaving(true);
+
+    let uploadedImageUrl = "";
+    if (imageFile) {
+      const fileName = `${Date.now()}-${imageFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("hospital-images")
+        .upload(fileName, imageFile);
+
+      if (uploadError) {
+        alert("Image upload failed: " + uploadError.message);
+        setSaving(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("hospital-images")
+        .getPublicUrl(fileName);
+
+      uploadedImageUrl = urlData.publicUrl;
+    }
+
     const { latitude, longitude, ...rest } = parsed.data;
     const { error } = await supabase.from("hospitals").insert({
       ...rest,
       specialty: selectedSpecialties,
       location: { type: "Point", coordinates: [longitude, latitude] },
+      image_url: uploadedImageUrl,
     });
 
     if (error) {
@@ -305,12 +331,9 @@ export default function NewHospitalPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Description
             </label>
-            <textarea
+            <MDEditor
               value={form.description}
-              onChange={(e) => set("description", e.target.value)}
-              rows={3}
-              placeholder="Brief description of the hospital..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(val) => set("description", val ?? "")}
             />
           </div>
 
@@ -323,6 +346,18 @@ export default function NewHospitalPage() {
             errors={errors}
             set={set}
           />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Hospital Image
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              title="Upload hospital image"
+              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+              className="w-full text-sm text-gray-500"
+            />
+          </div>
 
           <button
             onClick={handleSubmit}

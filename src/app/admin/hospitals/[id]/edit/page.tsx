@@ -1,5 +1,6 @@
 "use client";
 
+import MDEditor from "@uiw/react-md-editor";
 import { useState, useEffect } from "react";
 import { supabase } from "../../../../../lib/supabase";
 import { useRouter, useParams } from "next/navigation";
@@ -22,7 +23,9 @@ const HospitalSchema = z.object({
   longitude: z.number().min(-180).max(180),
 });
 
-type FormErrors = Partial<Record<keyof z.infer<typeof HospitalSchema>, string>> & {
+type FormErrors = Partial<
+  Record<keyof z.infer<typeof HospitalSchema>, string>
+> & {
   specialty?: string;
 };
 
@@ -78,6 +81,7 @@ export default function EditHospitalPage() {
   const adminLoading = useRequireAdmin();
 
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<FormErrors>({});
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
@@ -168,14 +172,41 @@ export default function EditHospitalPage() {
     }
 
     setSaving(true);
+
+    let uploadedImageUrl = "";
+    if (imageFile) {
+      const fileName = `${Date.now()}-${imageFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("hospital-images")
+        .upload(fileName, imageFile);
+
+      if (uploadError) {
+        alert("Image upload failed: " + uploadError.message);
+        setSaving(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("hospital-images")
+        .getPublicUrl(fileName);
+
+      uploadedImageUrl = urlData.publicUrl;
+    }
+
     const { latitude, longitude, ...rest } = parsed.data;
+    const updateData: Record<string, unknown> = {
+      ...rest,
+      specialty: selectedSpecialties,
+      location: { type: "Point", coordinates: [longitude, latitude] },
+    };
+
+    if (uploadedImageUrl) {
+      updateData.image_url = uploadedImageUrl;
+    }
+
     const { error } = await supabase
       .from("hospitals")
-      .update({
-        ...rest,
-        specialty: selectedSpecialties,
-        location: { type: "Point", coordinates: [longitude, latitude] },
-      })
+      .update(updateData)
       .eq("id", id);
 
     if (error) {
@@ -327,12 +358,9 @@ export default function EditHospitalPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Description
             </label>
-            <textarea
+            <MDEditor
               value={form.description}
-              onChange={(e) => set("description", e.target.value)}
-              rows={3}
-              placeholder="Enter hospital description"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(val) => set("description", val ?? "")}
             />
           </div>
 
@@ -343,6 +371,19 @@ export default function EditHospitalPage() {
             type="number"
             error={errors.rating}
           />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Hospital Image
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              title="Upload hospital image"
+              onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
+              className="w-full text-sm text-gray-500"
+            />
+          </div>
 
           <button
             onClick={handleSubmit}
