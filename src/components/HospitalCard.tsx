@@ -10,30 +10,32 @@ export default function HospitalCard({ hospital }: HospitalCardProps) {
   return (
     <Link
       href={`/hospitals/${hospital.id}`}
-      className="block bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="block bg-white rounded-2xl border border-gray-100 p-4 hover:border-emerald-200 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500"
     >
-      <div className="flex justify-between items-start mb-2 gap-4">
-        <h2 className="text-lg font-semibold text-gray-800">{hospital.name}</h2>
+      <div className="flex justify-between items-start mb-3 gap-3">
+        <h2 className="text-base font-semibold text-slate-900 leading-snug">
+          {hospital.name}
+        </h2>
         <span
-          className={`text-xs px-2 py-1 rounded font-medium ${
+          className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
             hospital.ownership === "public"
-              ? "bg-blue-100 text-green-700"
-              : "bg-blue-100 text-blue-700"
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-purple-50 text-purple-700"
           }`}
         >
           {hospital.ownership}
         </span>
       </div>
 
-      <div className="flex items-center gap-1 text-gray-500 text-sm mb-1">
-        <MapPin size={14} />
+      <div className="flex items-start gap-1.5 text-slate-500 text-xs mb-1.5">
+        <MapPin size={13} className="mt-0.5 shrink-0 text-emerald-500" />
         <span>
           {hospital.address}, {hospital.city}, {hospital.state}
         </span>
       </div>
 
-      <div className="flex items-center gap-1 text-gray-500 text-sm mb-3">
-        <Phone size={14} />
+      <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-3">
+        <Phone size={13} className="shrink-0 text-emerald-500" />
         <span>{hospital.phone}</span>
       </div>
 
@@ -41,7 +43,7 @@ export default function HospitalCard({ hospital }: HospitalCardProps) {
         {hospital.specialty.map((s) => (
           <span
             key={s}
-            className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full"
+            className="text-xs bg-gray-50 text-slate-600 border border-gray-100 px-2 py-0.5 rounded-full"
           >
             {s}
           </span>

@@ -6,6 +6,7 @@ import { supabase } from "../../../../lib/supabase";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { useRequireAdmin } from "../../../../lib/useRequireAdmin";
+import { ArrowLeft } from "lucide-react";
 
 const HospitalSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -45,7 +46,6 @@ interface FieldProps {
   field: string;
   type?: string;
   placeholder?: string;
-  // use unknown instead of any to satisfy lint rule
   form: Record<string, unknown>;
   errors: FormErrors;
   set: (field: string, value: string) => void;
@@ -61,7 +61,7 @@ const Field = ({
   set,
 }: FieldProps) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
+    <label className="block text-sm font-medium text-slate-700 mb-1">
       {label}
     </label>
     <input
@@ -69,7 +69,7 @@ const Field = ({
       value={String(form[field] ?? "")}
       onChange={(e) => set(field, e.target.value)}
       placeholder={placeholder}
-      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
     />
     {errors[field as keyof FormErrors] && (
       <p className="text-red-500 text-xs mt-1">
@@ -85,6 +85,7 @@ export default function NewHospitalPage() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     name: "",
     address: "",
@@ -100,7 +101,6 @@ export default function NewHospitalPage() {
     latitude: "",
     longitude: "",
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const set = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -112,7 +112,6 @@ export default function NewHospitalPage() {
 
   const handleSubmit = async () => {
     setErrors({});
-
     const parsed = HospitalSchema.safeParse({
       ...form,
       rating: form.rating ? Number(form.rating) : undefined,
@@ -144,17 +143,14 @@ export default function NewHospitalPage() {
       const { error: uploadError } = await supabase.storage
         .from("hospital-images")
         .upload(fileName, imageFile);
-
       if (uploadError) {
         alert("Image upload failed: " + uploadError.message);
         setSaving(false);
         return;
       }
-
       const { data: urlData } = supabase.storage
         .from("hospital-images")
         .getPublicUrl(fileName);
-
       uploadedImageUrl = urlData.publicUrl;
     }
 
@@ -175,22 +171,30 @@ export default function NewHospitalPage() {
     router.push("/admin");
   };
 
-  if (adminLoading) return <p className="text-center mt-20">Loading...</p>;
+  if (adminLoading)
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-65px)]">
+        <p className="text-slate-400 text-sm">Loading...</p>
+      </div>
+    );
 
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => router.push("/admin")}
-            className="text-gray-500 hover:text-gray-700"
+            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors"
           >
-            ← Back
+            <ArrowLeft size={16} />
+            Back
           </button>
-          <h1 className="text-2xl font-bold text-blue-700">Add New Hospital</h1>
+          <span className="text-slate-300">/</span>
+          <h1 className="text-xl font-bold text-slate-900">Add New Hospital</h1>
         </div>
 
-        <div className="bg-white rounded-xl shadow p-6 flex flex-col gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-4">
           <Field
             label="Hospital Name *"
             field="name"
@@ -237,14 +241,14 @@ export default function NewHospitalPage() {
               set={set}
             />
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
                 Ownership *
               </label>
               <select
                 value={form.ownership}
                 onChange={(e) => set("ownership", e.target.value)}
                 title="Ownership"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               >
                 <option value="public">Public</option>
                 <option value="private">Private</option>
@@ -294,7 +298,7 @@ export default function NewHospitalPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               Specialties
             </label>
             <div className="flex flex-wrap gap-2">
@@ -303,10 +307,10 @@ export default function NewHospitalPage() {
                   key={s}
                   type="button"
                   onClick={() => toggleSpecialty(s)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     selectedSpecialties.includes(s)
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
+                      ? "bg-emerald-600 text-white border-emerald-600"
+                      : "bg-white text-slate-600 border-gray-200 hover:border-emerald-400"
                   }`}
                 >
                   {s}
@@ -328,7 +332,7 @@ export default function NewHospitalPage() {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Description
             </label>
             <MDEditor
@@ -346,8 +350,9 @@ export default function NewHospitalPage() {
             errors={errors}
             set={set}
           />
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Hospital Image
             </label>
             <input
@@ -355,14 +360,14 @@ export default function NewHospitalPage() {
               accept="image/*"
               title="Upload hospital image"
               onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-              className="w-full text-sm text-gray-500"
+              className="w-full text-sm text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
             />
           </div>
 
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 mt-2"
+            className="bg-emerald-600 text-white py-3 rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors mt-2"
           >
             {saving ? "Saving..." : "Create Hospital"}
           </button>

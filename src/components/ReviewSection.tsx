@@ -31,7 +31,6 @@ export default function ReviewSection({ hospitalId }: ReviewSectionProps) {
         .select("*")
         .eq("hospital_id", hospitalId)
         .order("created_at", { ascending: false });
-
       if (data) setReviews(data);
     };
 
@@ -57,15 +56,9 @@ export default function ReviewSection({ hospitalId }: ReviewSectionProps) {
     }
 
     setSubmitting(true);
-
     const { data, error } = await supabase
       .from("reviews")
-      .insert({
-        hospital_id: hospitalId,
-        user_id: user.id,
-        rating,
-        comment,
-      })
+      .insert({ hospital_id: hospitalId, user_id: user.id, rating, comment })
       .select()
       .single();
 
@@ -82,17 +75,17 @@ export default function ReviewSection({ hospitalId }: ReviewSectionProps) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow p-6 mt-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">
-        Reviews ({reviews.length})
+    <div className="bg-white rounded-2xl border border-gray-100 p-6 mt-6">
+      <h2 className="text-lg font-semibold text-slate-900 mb-5">
+        Reviews{" "}
+        <span className="text-slate-400 font-normal">({reviews.length})</span>
       </h2>
 
       {user ? (
-        <div className="mb-6 border-b pb-6">
-          <p className="text-sm font-medium text-gray-700 mb-2">
+        <div className="mb-6 pb-6 border-b border-gray-100">
+          <p className="text-sm font-medium text-slate-700 mb-3">
             Leave a review
           </p>
-
           <div className="flex gap-1 mb-3">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
@@ -103,36 +96,37 @@ export default function ReviewSection({ hospitalId }: ReviewSectionProps) {
                 onClick={() => setRating(star)}
               >
                 <Star
-                  size={24}
+                  size={22}
                   className={`transition-colors ${
                     star <= (hovered || rating)
                       ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-300"
+                      : "text-gray-200"
                   }`}
                 />
               </button>
             ))}
           </div>
-
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Share your experience (optional)"
             rows={3}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent mb-3"
           />
-
           <button
             onClick={handleSubmit}
             disabled={submitting || rating === 0}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
           >
             {submitting ? "Submitting..." : "Submit Review"}
           </button>
         </div>
       ) : (
-        <p className="text-sm text-gray-500 mb-6 border-b pb-4">
-          <a href="/login" className="text-blue-600 hover:underline">
+        <p className="text-sm text-slate-500 mb-6 pb-5 border-b border-gray-100">
+          <a
+            href="/admin/login"
+            className="text-emerald-600 hover:underline font-medium"
+          >
             Log in
           </a>{" "}
           to leave a review
@@ -141,16 +135,21 @@ export default function ReviewSection({ hospitalId }: ReviewSectionProps) {
 
       <div className="space-y-4">
         {reviews.length === 0 ? (
-          <p className="text-gray-400 text-sm">No reviews yet. Be the first!</p>
+          <p className="text-slate-400 text-sm">
+            No reviews yet. Be the first!
+          </p>
         ) : (
           reviews.map((review) => (
-            <div key={review.id} className="border-b pb-4 last:border-0">
-              <div className="flex items-center gap-2 mb-1">
+            <div
+              key={review.id}
+              className="border-b border-gray-50 pb-4 last:border-0"
+            >
+              <div className="flex items-center gap-2 mb-1.5">
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
-                      size={14}
+                      size={13}
                       className={
                         star <= review.rating
                           ? "fill-yellow-400 text-yellow-400"
@@ -159,12 +158,12 @@ export default function ReviewSection({ hospitalId }: ReviewSectionProps) {
                     />
                   ))}
                 </div>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-slate-400">
                   {new Date(review.created_at).toLocaleDateString()}
                 </span>
               </div>
               {review.comment && (
-                <p className="text-sm text-gray-700">{review.comment}</p>
+                <p className="text-sm text-slate-600">{review.comment}</p>
               )}
             </div>
           ))

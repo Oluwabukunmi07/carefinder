@@ -6,6 +6,7 @@ import { supabase } from "../../../../../lib/supabase";
 import { useRouter, useParams } from "next/navigation";
 import { z } from "zod";
 import { useRequireAdmin } from "../../../../../lib/useRequireAdmin";
+import { ArrowLeft } from "lucide-react";
 
 const HospitalSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -59,7 +60,7 @@ function Field({
 }: FieldProps) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-sm font-medium text-slate-700 mb-1">
         {label}
       </label>
       <input
@@ -67,7 +68,7 @@ function Field({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
       />
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
@@ -103,19 +104,16 @@ export default function EditHospitalPage() {
 
   useEffect(() => {
     if (adminLoading) return;
-
     const fetchHospital = async () => {
       const { data, error } = await supabase
         .from("hospitals")
         .select("*")
         .eq("id", id)
         .single();
-
       if (error || !data) {
         router.push("/admin");
         return;
       }
-
       setForm({
         name: data.name ?? "",
         address: data.address ?? "",
@@ -147,7 +145,6 @@ export default function EditHospitalPage() {
 
   const handleSubmit = async () => {
     setErrors({});
-
     const parsed = HospitalSchema.safeParse({
       ...form,
       rating: form.rating ? Number(form.rating) : undefined,
@@ -179,17 +176,14 @@ export default function EditHospitalPage() {
       const { error: uploadError } = await supabase.storage
         .from("hospital-images")
         .upload(fileName, imageFile);
-
       if (uploadError) {
         alert("Image upload failed: " + uploadError.message);
         setSaving(false);
         return;
       }
-
       const { data: urlData } = supabase.storage
         .from("hospital-images")
         .getPublicUrl(fileName);
-
       uploadedImageUrl = urlData.publicUrl;
     }
 
@@ -199,42 +193,44 @@ export default function EditHospitalPage() {
       specialty: selectedSpecialties,
       location: { type: "Point", coordinates: [longitude, latitude] },
     };
-
-    if (uploadedImageUrl) {
-      updateData.image_url = uploadedImageUrl;
-    }
+    if (uploadedImageUrl) updateData.image_url = uploadedImageUrl;
 
     const { error } = await supabase
       .from("hospitals")
       .update(updateData)
       .eq("id", id);
-
     if (error) {
       alert("Error saving: " + error.message);
       setSaving(false);
       return;
     }
-
     router.push("/admin");
   };
 
   if (adminLoading || loading)
-    return <p className="text-center mt-20">Loading...</p>;
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-65px)]">
+        <p className="text-slate-400 text-sm">Loading...</p>
+      </div>
+    );
 
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => router.push("/admin")}
-            className="text-gray-500 hover:text-gray-700"
+            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors"
           >
-            ← Back
+            <ArrowLeft size={16} />
+            Back
           </button>
-          <h1 className="text-2xl font-bold text-blue-700">Edit Hospital</h1>
+          <span className="text-slate-300">/</span>
+          <h1 className="text-xl font-bold text-slate-900">Edit Hospital</h1>
         </div>
 
-        <div className="bg-white rounded-xl shadow p-6 flex flex-col gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col gap-4">
           <Field
             label="Hospital Name *"
             value={form.name}
@@ -273,7 +269,7 @@ export default function EditHospitalPage() {
             <div>
               <label
                 htmlFor="ownership"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-slate-700 mb-1"
               >
                 Ownership *
               </label>
@@ -281,7 +277,7 @@ export default function EditHospitalPage() {
                 id="ownership"
                 value={form.ownership}
                 onChange={(e) => set("ownership", e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               >
                 <option value="public">Public</option>
                 <option value="private">Private</option>
@@ -323,7 +319,7 @@ export default function EditHospitalPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               Specialties
             </label>
             <div className="flex flex-wrap gap-2">
@@ -332,10 +328,10 @@ export default function EditHospitalPage() {
                   key={s}
                   type="button"
                   onClick={() => toggleSpecialty(s)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                     selectedSpecialties.includes(s)
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-600 border-gray-300 hover:border-blue-400"
+                      ? "bg-emerald-600 text-white border-emerald-600"
+                      : "bg-white text-slate-600 border-gray-200 hover:border-emerald-400"
                   }`}
                 >
                   {s}
@@ -355,7 +351,7 @@ export default function EditHospitalPage() {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Description
             </label>
             <MDEditor
@@ -373,7 +369,7 @@ export default function EditHospitalPage() {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Hospital Image
             </label>
             <input
@@ -381,14 +377,14 @@ export default function EditHospitalPage() {
               accept="image/*"
               title="Upload hospital image"
               onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-              className="w-full text-sm text-gray-500"
+              className="w-full text-sm text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
             />
           </div>
 
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 mt-2"
+            className="bg-emerald-600 text-white py-3 rounded-xl font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors mt-2"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>

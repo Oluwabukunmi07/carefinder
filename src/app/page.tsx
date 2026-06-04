@@ -39,10 +39,8 @@ function HomeContent() {
   useEffect(() => {
     const fetchHospitals = async () => {
       setLoading(true);
-
       try {
         let data;
-
         if (filters.userLat && filters.userLng && filters.radius) {
           const { data: radiusData, error } = await supabase.rpc(
             "hospitals_within_radius",
@@ -52,54 +50,37 @@ function HomeContent() {
               radius_km: filters.radius,
             },
           );
-
           if (error) throw error;
           data = radiusData;
         } else {
           let query = supabase.from("hospitals").select("*");
-
           if (filters.query) {
             query = query.or(
               `name.ilike.%${filters.query}%,city.ilike.%${filters.query}%,lga.ilike.%${filters.query}%`,
             );
           }
-
-          if (filters.specialty) {
+          if (filters.specialty)
             query = query.contains("specialty", [filters.specialty]);
-          }
-
-          if (filters.ownership) {
+          if (filters.ownership)
             query = query.eq("ownership", filters.ownership);
-          }
-
-          if (filters.city) {
-            query = query.ilike("city", `%${filters.city}%`);
-          }
-
-          if (filters.lga) {
-            query = query.ilike("lga", `%${filters.lga}%`);
-          }
-
+          if (filters.city) query = query.ilike("city", `%${filters.city}%`);
+          if (filters.lga) query = query.ilike("lga", `%${filters.lga}%`);
           const { data: queryData, error } = await query;
           if (error) throw error;
           data = queryData;
         }
-
         setHospitals(data as Hospital[]);
       } catch (error: unknown) {
         console.error("Full error:", JSON.stringify(error));
-        console.error("Error string:", String(error));
       } finally {
         setLoading(false);
       }
     };
-
     fetchHospitals();
   }, [filters]);
 
   const exportCSV = () => {
     if (hospitals.length === 0) return;
-
     const csvData = hospitals.map((h) => ({
       Name: h.name,
       Address: h.address,
@@ -112,7 +93,6 @@ function HomeContent() {
       Ownership: h.ownership,
       Rating: h.rating,
     }));
-
     const csv = Papa.unparse(csvData);
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -125,14 +105,12 @@ function HomeContent() {
 
   const shareLink = () => {
     const params = new URLSearchParams();
-
     if (filters.query) params.set("query", filters.query);
     if (filters.specialty) params.set("specialty", filters.specialty);
     if (filters.ownership) params.set("ownership", filters.ownership);
     if (filters.city) params.set("city", filters.city);
     if (filters.lga) params.set("lga", filters.lga);
     if (filters.radius) params.set("radius", filters.radius.toString());
-
     const url = `${window.location.origin}?${params.toString()}`;
     navigator.clipboard.writeText(url);
     alert("Link copied to clipboard!");
@@ -140,86 +118,105 @@ function HomeContent() {
 
   const currentShareLink = useMemo(() => {
     const params = new URLSearchParams();
-
     if (filters.query) params.set("query", filters.query);
     if (filters.specialty) params.set("specialty", filters.specialty);
     if (filters.ownership) params.set("ownership", filters.ownership);
     if (filters.city) params.set("city", filters.city);
     if (filters.lga) params.set("lga", filters.lga);
     if (filters.radius) params.set("radius", filters.radius.toString());
-
     return origin ? `${origin}?${params.toString()}` : `/?${params.toString()}`;
   }, [filters, origin]);
 
   return (
-    <main className="min-h-screen bg-gray-50 overflow-x-hidden">
-      <div className="max-w-5xl mx-auto px-4 py-6 sm:px-6 sm:py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-blue-700 mb-2">
-            Carefinder
-          </h1>
-          <p className="text-sm sm:text-base text-gray-500">
-            Find hospitals near you across Nigeria
-          </p>
+    <main className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3">
+          <div className="max-w-2xl mb-6">
+            <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+              Nigeria&apos;s Hospital Directory
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-4 leading-tight">
+              Your city. Your hospital.
+              <br />
+              <span className="text-emerald-600">Your health.</span>
+            </h1>
+            <p className="text-base sm:text-lg text-slate-500">
+              Search thousands of hospitals across Nigeria by name, city,
+              specialty, or your current location.
+            </p>
+          </div>
+          <SearchBar onSearch={handleSearch} />
         </div>
+      </div>
 
-        <SearchBar onSearch={handleSearch} />
-
+      {/* Content */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+        {/* Toolbar */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-gray-600">
-            {hospitals.length} hospital{hospitals.length !== 1 ? "s" : ""} found
+          <p className="text-sm text-slate-500">
+            <span className="font-semibold text-slate-900">
+              {hospitals.length}
+            </span>{" "}
+            hospital{hospitals.length !== 1 ? "s" : ""} found
           </p>
-
           <div className="flex flex-wrap gap-2">
             <button
               onClick={exportCSV}
               disabled={hospitals.length === 0}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-slate-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Export CSV
             </button>
             <button
               onClick={shareLink}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 w-full sm:w-24"
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-slate-700 bg-white hover:bg-gray-50 transition-colors"
             >
               Share
             </button>
             <button
               onClick={() => setEmailShareOpen(true)}
               disabled={hospitals.length === 0}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Email
             </button>
           </div>
         </div>
 
-        <div className="mb-6 grid gap-4 lg:grid-cols-2">
-          <div className="w-full lg:w-1/2">
+        {/* Map + List */}
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Map */}
+          <div className="flex-1 rounded-2xl overflow-hidden h-[300px] lg:h-[560px] shadow-sm border border-gray-100">
             <HospitalMap hospitals={hospitals} />
           </div>
 
-          <div className="w-full lg:w-1/2 overflow-y-auto max-h-[420px] sm:max-h-[450px]">
+          {/* Hospital List */}
+          <div className="w-full lg:w-[400px] lg:flex-shrink-0 overflow-y-auto max-h-[560px] space-y-3">
             {loading ? (
-              <p className="text-center text-gray-400">Loading hospitals...</p>
-            ) : hospitals.length === 0 ? (
-              <p className="text-center text-gray-400">No hospitals found.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {hospitals.map((hospital) => (
-                  <HospitalCard key={hospital.id} hospital={hospital} />
-                ))}
+              <div className="flex items-center justify-center h-40">
+                <p className="text-sm text-slate-400">Loading hospitals...</p>
               </div>
+            ) : hospitals.length === 0 ? (
+              <div className="flex items-center justify-center h-40">
+                <p className="text-sm text-slate-400">No hospitals found.</p>
+              </div>
+            ) : (
+              hospitals.map((hospital) => (
+                <HospitalCard key={hospital.id} hospital={hospital} />
+              ))
             )}
           </div>
         </div>
-        <EmailShareDialog
-          hospitals={hospitals}
-          shareLink={currentShareLink}
-          open={emailShareOpen}
-          onClose={() => setEmailShareOpen(false)}
-        />
       </div>
+
+      <EmailShareDialog
+        hospitals={hospitals}
+        shareLink={currentShareLink}
+        open={emailShareOpen}
+        onClose={() => setEmailShareOpen(false)}
+      />
     </main>
   );
 }
