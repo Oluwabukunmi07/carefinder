@@ -2,9 +2,11 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Hospital Search", () => {
   test("homepage loads and shows hospitals", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Carefinder" })).toBeVisible();
-});
+    await page.goto("/");
+    await expect(
+      page.getByRole("heading", { name: "Your city. Your hospital." }),
+    ).toBeVisible();
+  });
 
   test("search filters hospitals by name", async ({ page }) => {
     await page.goto("/");
@@ -40,17 +42,24 @@ test.describe("Hospital Search", () => {
 });
 
 test.describe("Admin Auth", () => {
- test("admin page redirects to login when not authenticated", async ({ page }) => {
-  await page.goto("/admin");
-  await expect(page.locator("input[placeholder='Email address']")).toBeVisible({ timeout: 10000 });
-});
+  test("admin page redirects to login when not authenticated", async ({
+    page,
+  }) => {
+    await page.goto("/admin");
+    await expect(page.locator("text=Admin Login")).toBeVisible({
+      timeout: 10000,
+    });
+  });
 
   test("admin login page renders", async ({ page }) => {
-  await page.goto("/admin/login");
-  await page.waitForTimeout(1000);
-  await expect(page.locator("input[placeholder='Email address']")).toBeVisible();
-  await expect(page.locator("input[placeholder='Password']")).toBeVisible();
-});
+    await page.goto("/admin/login");
+    await page.waitForTimeout(1000);
+    await expect(
+      page.getByRole("heading", { name: "Admin Login" }),
+    ).toBeVisible();
+    await expect(page.locator("input[type='email']")).toBeVisible();
+    await expect(page.locator("input[type='password']")).toBeVisible();
+  });
 
   test("non-admin cannot access admin dashboard", async ({ page }) => {
     await page.goto("/admin");
