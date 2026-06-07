@@ -1,5 +1,6 @@
 import "./globals.css";
 import SiteHeader from "../components/SiteHeader";
+import Footer from "../components/Footer";
 
 export const metadata = {
   title: "Carefinder",
@@ -14,21 +15,22 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link
-    rel="preconnect"
-    href="https://fonts.gstatic.com"
-    crossOrigin="anonymous"
-  />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap"
-    rel="stylesheet"
-  />
-</head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body>
         <SiteHeader />
         {children}
+        <Footer />
       </body>
     </html>
   );

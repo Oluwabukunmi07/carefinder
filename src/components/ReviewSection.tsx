@@ -10,6 +10,7 @@ interface Review {
   comment: string;
   created_at: string;
   user_id: string;
+  approved: boolean;
 }
 
 interface ReviewSectionProps {
@@ -30,6 +31,7 @@ export default function ReviewSection({ hospitalId }: ReviewSectionProps) {
         .from("reviews")
         .select("*")
         .eq("hospital_id", hospitalId)
+        .eq("approved", true)
         .order("created_at", { ascending: false });
       if (data) setReviews(data);
     };
@@ -56,11 +58,15 @@ export default function ReviewSection({ hospitalId }: ReviewSectionProps) {
     }
 
     setSubmitting(true);
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("reviews")
-      .insert({ hospital_id: hospitalId, user_id: user.id, rating, comment })
-      .select()
-      .single();
+      .insert({
+        hospital_id: hospitalId,
+        user_id: user.id,
+        rating,
+        comment,
+        approved: false,
+      });
 
     if (error) {
       alert("Error submitting review: " + error.message);
@@ -68,7 +74,7 @@ export default function ReviewSection({ hospitalId }: ReviewSectionProps) {
       return;
     }
 
-    setReviews((prev) => [data, ...prev]);
+    alert("Review submitted! It will appear after admin approval.");
     setRating(0);
     setComment("");
     setSubmitting(false);
