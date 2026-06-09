@@ -4,13 +4,21 @@ import type { Hospital } from "../types";
 
 interface HospitalCardProps {
   hospital: Hospital;
+  highlighted?: boolean;
 }
 
-export default function HospitalCard({ hospital }: HospitalCardProps) {
+export default function HospitalCard({
+  hospital,
+  highlighted,
+}: HospitalCardProps) {
   return (
     <Link
       href={`/hospitals/${hospital.id}`}
-      className="block bg-white rounded-2xl border border-gray-100 p-4 hover:border-emerald-200 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500"
+      className={`block bg-white rounded-2xl border p-4 hover:border-emerald-200 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+        highlighted
+          ? "border-emerald-400 shadow-md shadow-emerald-50 ring-2 ring-emerald-100"
+          : "border-gray-100"
+      }`}
     >
       <div className="flex justify-between items-start mb-3 gap-3">
         <h2 className="text-base font-semibold text-slate-900 leading-snug">

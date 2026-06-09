@@ -12,6 +12,8 @@ import { useSearchParams } from "next/navigation";
 
 function SearchContent() {
   const searchParams = useSearchParams();
+  const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<SearchFilters>(() => ({
     query: searchParams.get("query") || "",
@@ -28,6 +30,7 @@ function SearchContent() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(false);
   const [emailShareOpen, setEmailShareOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [origin] = useState(() =>
     typeof window !== "undefined" ? window.location.origin : "",
   );
@@ -76,6 +79,17 @@ function SearchContent() {
     fetchHospitals();
   }, [filters]);
 
+  const handleMarkerClick = (id: string) => {
+    setSelectedId(id);
+    setMobileTab("list");
+    setTimeout(() => {
+      document.getElementById(`hospital-${id}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }, 100);
+  };
+
   const exportCSV = () => {
     if (hospitals.length === 0) return;
     const csvData = hospitals.map((h) => ({
@@ -110,7 +124,8 @@ function SearchContent() {
     if (filters.radius) params.set("radius", filters.radius.toString());
     const url = `${window.location.origin}/search?${params.toString()}`;
     navigator.clipboard.writeText(url);
-    alert("Link copied to clipboard!");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const currentShareLink = useMemo(() => {
@@ -127,79 +142,106 @@ function SearchContent() {
   }, [filters, origin]);
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3">
-          <div className="max-w-2xl mb-6">
-            <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-              Nigeria&apos;s Hospital Directory
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-4 leading-tight">
-              Your city. Your hospital.
-              <br />
-              <span className="text-emerald-600">Your health.</span>
-            </h1>
-            <p className="text-base sm:text-lg text-slate-500">
-              Search thousands of hospitals across Nigeria by name, city,
-              specialty, or your current location.
-            </p>
-          </div>
-          <SearchBar onSearch={handleSearch} />
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col h-[calc(100vh-65px)]">
+      {/* TOP BAR */}
+      <div className="flex-shrink-0">
+        <SearchBar onSearch={handleSearch} />
+        <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-2 flex items-center justify-between">
           <p className="text-sm text-slate-500">
             <span className="font-semibold text-slate-900">
               {hospitals.length}
             </span>{" "}
             hospital{hospitals.length !== 1 ? "s" : ""} found
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            {/* Mobile tab toggle */}
+            <div className="flex lg:hidden gap-1 bg-gray-100 p-1 rounded-xl">
+              <button
+                onClick={() => setMobileTab("list")}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                  mobileTab === "list"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500"
+                }`}
+              >
+                List
+              </button>
+              <button
+                onClick={() => setMobileTab("map")}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                  mobileTab === "map"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500"
+                }`}
+              >
+                Map
+              </button>
+            </div>
             <button
               onClick={exportCSV}
               disabled={hospitals.length === 0}
-              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-slate-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-slate-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Export CSV
             </button>
             <button
               onClick={shareLink}
-              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-slate-700 bg-white hover:bg-gray-50 transition-colors"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-slate-700 bg-white hover:bg-gray-50 transition-colors"
             >
-              Share
+              {copied ? "✓ Copied!" : "Share"}
             </button>
             <button
               onClick={() => setEmailShareOpen(true)}
               disabled={hospitals.length === 0}
-              className="px-4 py-2 text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Email
             </button>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 rounded-2xl overflow-hidden h-[300px] lg:h-[560px] shadow-sm border border-gray-100">
-            <HospitalMap hospitals={hospitals} />
-          </div>
-          <div className="w-full lg:w-[400px] lg:flex-shrink-0 overflow-y-auto max-h-[560px] space-y-3">
-            {loading ? (
-              <div className="flex items-center justify-center h-40">
-                <p className="text-sm text-slate-400">Loading hospitals...</p>
+      {/* MAIN CONTENT */}
+      <div className="flex-1 overflow-hidden flex">
+        {/* Hospital list */}
+        <div
+          className={`w-full lg:w-[420px] lg:flex-shrink-0 overflow-y-auto bg-gray-50 border-r border-gray-100 p-3 space-y-3 ${
+            mobileTab === "map" ? "hidden lg:block" : "block"
+          }`}
+        >
+          {loading ? (
+            <div className="flex items-center justify-center h-40">
+              <p className="text-sm text-slate-400">Loading hospitals...</p>
+            </div>
+          ) : hospitals.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-40 gap-2">
+              <p className="text-sm font-medium text-slate-600">
+                No hospitals found
+              </p>
+              <p className="text-xs text-slate-400">
+                Try adjusting your search or filters
+              </p>
+            </div>
+          ) : (
+            hospitals.map((hospital) => (
+              <div key={hospital.id} id={`hospital-${hospital.id}`}>
+                <HospitalCard
+                  hospital={hospital}
+                  highlighted={selectedId === hospital.id}
+                />
               </div>
-            ) : hospitals.length === 0 ? (
-              <div className="flex items-center justify-center h-40">
-                <p className="text-sm text-slate-400">No hospitals found.</p>
-              </div>
-            ) : (
-              hospitals.map((hospital) => (
-                <HospitalCard key={hospital.id} hospital={hospital} />
-              ))
-            )}
-          </div>
+            ))
+          )}
+        </div>
+
+        {/* Map */}
+        <div
+          className={`flex-1 h-full ${mobileTab === "list" ? "hidden lg:block" : "block"}`}
+        >
+          <HospitalMap
+            hospitals={hospitals}
+            onHospitalClick={handleMarkerClick}
+          />
         </div>
       </div>
 
@@ -209,14 +251,16 @@ function SearchContent() {
         open={emailShareOpen}
         onClose={() => setEmailShareOpen(false)}
       />
-    </main>
+    </div>
   );
 }
 
 export default function SearchPage() {
   return (
     <Suspense
-      fallback={<div className="text-center text-gray-400">Loading...</div>}
+      fallback={
+        <div className="text-center text-gray-400 py-20">Loading...</div>
+      }
     >
       <SearchContent />
     </Suspense>

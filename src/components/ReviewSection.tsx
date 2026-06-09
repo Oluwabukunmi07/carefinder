@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Star } from "lucide-react";
+import { Star, CheckCircle } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 interface Review {
@@ -22,6 +22,8 @@ export default function ReviewSection({ hospitalId }: ReviewSectionProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [hovered, setHovered] = useState(0);
 
@@ -48,36 +50,32 @@ export default function ReviewSection({ hospitalId }: ReviewSectionProps) {
   }, [hospitalId]);
 
   const handleSubmit = async () => {
-    if (!user) {
-      alert("Please log in to leave a review");
-      return;
-    }
     if (rating === 0) {
-      alert("Please select a rating");
+      setError("Please select a rating.");
       return;
     }
 
     setSubmitting(true);
-    const { error } = await supabase
-      .from("reviews")
-      .insert({
-        hospital_id: hospitalId,
-        user_id: user.id,
-        rating,
-        comment,
-        approved: false,
-      });
+    setError("");
 
-    if (error) {
-      alert("Error submitting review: " + error.message);
+    const { error: insertError } = await supabase.from("reviews").insert({
+      hospital_id: hospitalId,
+      user_id: user!.id,
+      rating,
+      comment,
+      approved: false,
+    });
+
+    if (insertError) {
+      setError("Something went wrong. Please try again.");
       setSubmitting(false);
       return;
     }
 
-    alert("Review submitted! It will appear after admin approval.");
     setRating(0);
     setComment("");
     setSubmitting(false);
+    setSubmitted(true);
   };
 
   return (
@@ -89,43 +87,69 @@ export default function ReviewSection({ hospitalId }: ReviewSectionProps) {
 
       {user ? (
         <div className="mb-6 pb-6 border-b border-gray-100">
-          <p className="text-sm font-medium text-slate-700 mb-3">
-            Leave a review
-          </p>
-          <div className="flex gap-1 mb-3">
-            {[1, 2, 3, 4, 5].map((star) => (
+          {submitted ? (
+            <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+              <CheckCircle size={18} className="text-emerald-600 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-emerald-800">
+                  Review submitted!
+                </p>
+                <p className="text-xs text-emerald-600 mt-0.5">
+                  It will appear here after admin approval.
+                </p>
+              </div>
               <button
-                key={star}
-                title={`Rate ${star} stars`}
-                onMouseEnter={() => setHovered(star)}
-                onMouseLeave={() => setHovered(0)}
-                onClick={() => setRating(star)}
+                onClick={() => setSubmitted(false)}
+                className="ml-auto text-xs text-emerald-600 hover:underline"
               >
-                <Star
-                  size={22}
-                  className={`transition-colors ${
-                    star <= (hovered || rating)
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-200"
-                  }`}
-                />
+                Write another
               </button>
-            ))}
-          </div>
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Share your experience (optional)"
-            rows={3}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent mb-3"
-          />
-          <button
-            onClick={handleSubmit}
-            disabled={submitting || rating === 0}
-            className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-          >
-            {submitting ? "Submitting..." : "Submit Review"}
-          </button>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-slate-700 mb-3">
+                Leave a review
+              </p>
+              <div className="flex gap-1 mb-3">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    title={`Rate ${star} stars`}
+                    onMouseEnter={() => setHovered(star)}
+                    onMouseLeave={() => setHovered(0)}
+                    onClick={() => {
+                      setRating(star);
+                      setError("");
+                    }}
+                  >
+                    <Star
+                      size={22}
+                      className={`transition-colors ${
+                        star <= (hovered || rating)
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-200"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Share your experience (optional)"
+                rows={3}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent mb-3"
+              />
+              {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || rating === 0}
+                className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                {submitting ? "Submitting..." : "Submit Review"}
+              </button>
+            </>
+          )}
         </div>
       ) : (
         <p className="text-sm text-slate-500 mb-6 pb-5 border-b border-gray-100">

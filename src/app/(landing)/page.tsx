@@ -1,8 +1,6 @@
 "use client";
 
-import Footer from "@/src/components/Footer";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
 
 const STATS = [
   { value: "150+", label: "Hospitals listed" },
@@ -69,24 +67,6 @@ const FEATURES = [
   },
 ];
 
-const STEPS = [
-  {
-    step: "1",
-    title: "Search by location or name",
-    desc: "Type a city, state, hospital name, or specialty — or just tap 'Use my location'.",
-  },
-  {
-    step: "2",
-    title: "Browse and filter results",
-    desc: "Narrow down by state, services offered, or map proximity. See contact info at a glance.",
-  },
-  {
-    step: "3",
-    title: "Save, share, or export",
-    desc: "Export your results as a CSV, share a link, or leave a review for a hospital you've visited.",
-  },
-];
-
 function NigeriaOutline() {
   return (
     <svg
@@ -107,22 +87,10 @@ function NigeriaOutline() {
 }
 
 export default function LandingPage() {
-  const [scrolled, setScrolled] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
     <div className="min-h-screen bg-white font-[Outfit,sans-serif] text-gray-900">
       {/* HERO */}
-      <section
-        ref={heroRef}
-        className="relative min-h-screen flex items-center overflow-hidden bg-white pt-16"
-      >
+      <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-16">
         <NigeriaOutline />
         <div
           className="absolute inset-0 pointer-events-none"
@@ -221,63 +189,6 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
-
-      {/* HOW IT WORKS */}
-      <section className="bg-gray-50 py-24">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <span className="text-xs font-semibold tracking-widest text-emerald-600 uppercase">
-              How it works
-            </span>
-            <h2 className="text-3xl font-bold mt-3 text-gray-900">
-              Find a hospital in three steps
-            </h2>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-8 relative">
-            <div className="hidden sm:block absolute top-6 left-[calc(16.66%+1.5rem)] right-[calc(16.66%+1.5rem)] h-px bg-emerald-100" />
-            {STEPS.map((s) => (
-              <div
-                key={s.step}
-                className="relative flex flex-col items-center text-center"
-              >
-                <div className="w-12 h-12 rounded-full bg-white border-2 border-emerald-200 text-emerald-600 font-bold text-lg flex items-center justify-center mb-5 z-10 shadow-sm">
-                  {s.step}
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-2">{s.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
-                  {s.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="max-w-6xl mx-auto px-6 py-24 text-center">
-        <h2 className="text-4xl font-bold text-gray-900 mb-4">
-          Ready to find care near you?
-        </h2>
-        <p className="text-gray-500 mb-10 max-w-md mx-auto">
-          Browse hospitals across Nigeria — no account needed.
-        </p>
-        <Link
-          href="/search"
-          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-9 py-4 rounded-xl transition-colors text-base shadow-lg shadow-emerald-200"
-        >
-          Find Hospitals
-          <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-            <path
-              fillRule="evenodd"
-              d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </Link>
-      </section>
-
-      {/* FOOTER */}
-      <Footer />
     </div>
   );
 }

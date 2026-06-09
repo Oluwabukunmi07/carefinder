@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import SiteHeader from "@/src/components/SiteHeader";
+import Footer from "@/src/components/Footer";
 
 export const metadata: Metadata = {
   title: "Carefinder",
@@ -12,6 +13,7 @@ export default function LandingLayout({ children }: { children: ReactNode }) {
     <>
       <SiteHeader />
       <main>{children}</main>
+      <Footer />
     </>
   );
 }
