@@ -27,11 +27,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>
-        <SiteHeader />
-        {children}
-        <Footer />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

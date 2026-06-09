@@ -1,16 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState, Suspense } from "react";
-import SearchBar from "../components/SearchBar";
-import HospitalCard from "../components/HospitalCard";
-import HospitalMap from "../components/HospitalMap";
-import EmailShareDialog from "../components/EmailShareDialog";
-import type { SearchFilters, Hospital } from "../types";
-import { supabase } from "../lib/supabase";
+import SearchBar from "../../../components/SearchBar";
+import HospitalCard from "../../../components/HospitalCard";
+import HospitalMap from "../../../components/HospitalMap";
+import EmailShareDialog from "../../../components/EmailShareDialog";
+import type { SearchFilters, Hospital } from "../../../types";
+import { supabase } from "../../../lib/supabase";
 import Papa from "papaparse";
 import { useSearchParams } from "next/navigation";
 
-function HomeContent() {
+function SearchContent() {
   const searchParams = useSearchParams();
 
   const [filters, setFilters] = useState<SearchFilters>(() => ({
@@ -32,9 +32,7 @@ function HomeContent() {
     typeof window !== "undefined" ? window.location.origin : "",
   );
 
-  const handleSearch = (newFilters: SearchFilters) => {
-    setFilters(newFilters);
-  };
+  const handleSearch = (newFilters: SearchFilters) => setFilters(newFilters);
 
   useEffect(() => {
     const fetchHospitals = async () => {
@@ -54,11 +52,10 @@ function HomeContent() {
           data = radiusData;
         } else {
           let query = supabase.from("hospitals").select("*");
-          if (filters.query) {
+          if (filters.query)
             query = query.or(
               `name.ilike.%${filters.query}%,city.ilike.%${filters.query}%,lga.ilike.%${filters.query}%`,
             );
-          }
           if (filters.specialty)
             query = query.contains("specialty", [filters.specialty]);
           if (filters.ownership)
@@ -111,7 +108,7 @@ function HomeContent() {
     if (filters.city) params.set("city", filters.city);
     if (filters.lga) params.set("lga", filters.lga);
     if (filters.radius) params.set("radius", filters.radius.toString());
-    const url = `${window.location.origin}?${params.toString()}`;
+    const url = `${window.location.origin}/search?${params.toString()}`;
     navigator.clipboard.writeText(url);
     alert("Link copied to clipboard!");
   };
@@ -124,12 +121,13 @@ function HomeContent() {
     if (filters.city) params.set("city", filters.city);
     if (filters.lga) params.set("lga", filters.lga);
     if (filters.radius) params.set("radius", filters.radius.toString());
-    return origin ? `${origin}?${params.toString()}` : `/?${params.toString()}`;
+    return origin
+      ? `${origin}/search?${params.toString()}`
+      : `/search?${params.toString()}`;
   }, [filters, origin]);
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3">
           <div className="max-w-2xl mb-6">
@@ -151,9 +149,7 @@ function HomeContent() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
-        {/* Toolbar */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-500">
             <span className="font-semibold text-slate-900">
@@ -185,14 +181,10 @@ function HomeContent() {
           </div>
         </div>
 
-        {/* Map + List */}
         <div className="flex flex-col lg:flex-row gap-4">
-          {/* Map */}
           <div className="flex-1 rounded-2xl overflow-hidden h-[300px] lg:h-[560px] shadow-sm border border-gray-100">
             <HospitalMap hospitals={hospitals} />
           </div>
-
-          {/* Hospital List */}
           <div className="w-full lg:w-[400px] lg:flex-shrink-0 overflow-y-auto max-h-[560px] space-y-3">
             {loading ? (
               <div className="flex items-center justify-center h-40">
@@ -221,12 +213,12 @@ function HomeContent() {
   );
 }
 
-export default function Home() {
+export default function SearchPage() {
   return (
     <Suspense
       fallback={<div className="text-center text-gray-400">Loading...</div>}
     >
-      <HomeContent />
+      <SearchContent />
     </Suspense>
   );
 }

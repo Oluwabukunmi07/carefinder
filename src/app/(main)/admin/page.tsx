@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "../../../lib/supabase";
 import { useRouter } from "next/navigation";
-import type { Hospital } from "../../types";
-import { useRequireAdmin } from "../../lib/useRequireAdmin";
+import type { Hospital } from "../../../types";
+import { useRequireAdmin } from "../../../lib/useRequireAdmin";
 import { Plus, LogOut, Pencil, Trash2, Check, X } from "lucide-react";
 
 interface Review {

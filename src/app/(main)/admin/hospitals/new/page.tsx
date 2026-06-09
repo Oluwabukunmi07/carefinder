@@ -2,10 +2,10 @@
 
 import MDEditor from "@uiw/react-md-editor";
 import { useState } from "react";
-import { supabase } from "../../../../lib/supabase";
+import { supabase } from "../../../../../lib/supabase";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
-import { useRequireAdmin } from "../../../../lib/useRequireAdmin";
+import { useRequireAdmin } from "../../../../../lib/useRequireAdmin";
 import { ArrowLeft } from "lucide-react";
 
 const HospitalSchema = z.object({

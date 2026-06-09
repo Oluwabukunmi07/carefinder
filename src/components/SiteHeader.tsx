@@ -15,23 +15,23 @@ export default function SiteHeader() {
               />
             </svg>
           </span>
-          <span className="text-xl font-bold text-slate-900 tracking-tight">
-            Carefinder
+          <span className="text-xl font-bold tracking-tight">
+            Care<span className="text-emerald-600">finder</span>
           </span>
         </Link>
 
         <nav className="flex items-center gap-3 text-sm">
           <Link
-            href="/"
-            className="text-slate-600 hover:text-slate-900 font-medium px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+            href="/admin/login"
+            className="text-slate-500 hover:text-slate-900 transition-colors"
           >
-            Home
+            Admin
           </Link>
           <Link
-            href="/admin/login"
+            href="/search"
             className="bg-emerald-600 text-white font-medium px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
           >
-            Admin Login
+            Find Hospitals
           </Link>
         </nav>
       </div>
