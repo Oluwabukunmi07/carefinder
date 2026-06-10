@@ -36,6 +36,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: inviteError.message }, { status: 400 });
     }
 
+    await adminClient.auth.admin.updateUserById(data.user.id, {
+      app_metadata: { role: "admin" },
+    });
+
     const { error: profileError } = await adminClient
       .from("profiles")
       .upsert({ id: data.user.id, role: "admin" });
