@@ -215,7 +215,7 @@ export default function AdminPage() {
               )}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => router.push("/admin/hospitals/new")}
               className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl hover:bg-emerald-700 transition-colors text-sm font-medium"
@@ -470,7 +470,69 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            {/* Mobile cards */}
+            <div className="space-y-3 md:hidden">
+              {filteredReviews.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-8">
+                  {reviewSearch
+                    ? "No reviews match your search."
+                    : "No reviews yet."}
+                </p>
+              ) : (
+                filteredReviews.map((r) => (
+                  <div
+                    key={r.id}
+                    className="bg-white rounded-2xl border border-gray-100 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <h2 className="font-semibold text-slate-900 text-sm">
+                          {r.hospital?.name ?? "—"}
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {"⭐".repeat(r.rating)}
+                        </p>
+                      </div>
+                      <span
+                        className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
+                          r.approved
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-amber-50 text-amber-700"
+                        }`}
+                      >
+                        {r.approved ? "Approved" : "Pending"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-3 line-clamp-2">
+                      {r.comment || "—"}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => toggleReviewApproval(r.id, r.approved)}
+                        className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs transition-colors ${
+                          r.approved
+                            ? "bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100"
+                            : "bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100"
+                        }`}
+                      >
+                        {r.approved ? <X size={13} /> : <Check size={13} />}
+                        {r.approved ? "Hide" : "Approve"}
+                      </button>
+                      <button
+                        onClick={() => deleteReview(r.id)}
+                        className="flex items-center justify-center gap-1.5 bg-red-50 text-red-600 border border-red-100 px-3 py-2 rounded-lg text-xs hover:bg-red-100 transition-colors"
+                      >
+                        <Trash2 size={13} />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
               {filteredReviews.length === 0 ? (
                 <p className="text-slate-400 text-sm p-6">
                   {reviewSearch
@@ -561,6 +623,8 @@ export default function AdminPage() {
           </>
         )}
       </div>
+
+      {/* Invite Modal */}
       {showInviteModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
