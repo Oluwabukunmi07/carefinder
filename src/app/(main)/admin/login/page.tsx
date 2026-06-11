@@ -5,11 +5,6 @@ import { supabase } from "../../../../lib/supabase";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
-export const metadata = {
-  title: "Admin Login | Carefinder",
-  description: "Sign in to the Carefinder admin dashboard.",
-};
-
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
