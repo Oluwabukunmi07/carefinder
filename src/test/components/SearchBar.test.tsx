@@ -5,17 +5,21 @@ import SearchBar from "../../components/SearchBar";
 describe("SearchBar", () => {
   it("renders search input", () => {
     render(<SearchBar onSearch={vi.fn()} />);
-    expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/hospital name, city, or lga/i),
+    ).toBeInTheDocument();
   });
 
-  it("renders specialty filter", () => {
+  it("renders filters button", () => {
     render(<SearchBar onSearch={vi.fn()} />);
-    expect(screen.getByText(/all specialties/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /filters/i }),
+    ).toBeInTheDocument();
   });
 
-  it("renders ownership filter", () => {
+  it("renders search button", () => {
     render(<SearchBar onSearch={vi.fn()} />);
-    expect(screen.getByText(/all types/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /search/i })).toBeInTheDocument();
   });
 
   it("calls onSearch when search button is clicked", () => {
