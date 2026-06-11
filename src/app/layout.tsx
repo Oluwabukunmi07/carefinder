@@ -1,6 +1,5 @@
 import "./globals.css";
-import SiteHeader from "../components/SiteHeader";
-import Footer from "../components/Footer";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 export const metadata = {
   title: "Carefinder",
@@ -27,7 +26,9 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </body>
     </html>
   );
 }

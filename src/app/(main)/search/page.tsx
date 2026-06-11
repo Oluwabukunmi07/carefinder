@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense, useRef } from "react";
 import SearchBar from "../../../components/SearchBar";
 import HospitalCard from "../../../components/HospitalCard";
 import HospitalMap from "../../../components/HospitalMap";
@@ -9,6 +9,20 @@ import type { SearchFilters, Hospital } from "../../../types";
 import { supabase } from "../../../lib/supabase";
 import Papa from "papaparse";
 import { useSearchParams } from "next/navigation";
+
+const HOSPITALS_PER_PAGE = 10;
+
+function getPageNumbers(page: number, total: number): (number | "...")[] {
+  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | "...")[] = [1];
+  if (page > 3) pages.push("...");
+  for (let i = Math.max(2, page - 1); i <= Math.min(total - 1, page + 1); i++) {
+    pages.push(i);
+  }
+  if (page < total - 2) pages.push("...");
+  pages.push(total);
+  return pages;
+}
 
 function SearchContent() {
   const searchParams = useSearchParams();
@@ -31,11 +45,38 @@ function SearchContent() {
   const [loading, setLoading] = useState(false);
   const [emailShareOpen, setEmailShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [page, setPage] = useState(1);
+  const listRef = useRef<HTMLDivElement>(null);
+  const pendingScrollId = useRef<string | null>(null);
   const [origin] = useState(() =>
     typeof window !== "undefined" ? window.location.origin : "",
   );
 
-  const handleSearch = (newFilters: SearchFilters) => setFilters(newFilters);
+  const totalPages = Math.ceil(hospitals.length / HOSPITALS_PER_PAGE);
+  const paginatedHospitals = hospitals.slice(
+    (page - 1) * HOSPITALS_PER_PAGE,
+    page * HOSPITALS_PER_PAGE,
+  );
+
+  useEffect(() => {
+    if (pendingScrollId.current) {
+      const id = pendingScrollId.current;
+      pendingScrollId.current = null;
+      setTimeout(() => {
+        document.getElementById(`hospital-${id}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }, 50);
+    } else {
+      listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [page]);
+
+  const handleSearch = (newFilters: SearchFilters) => {
+    setFilters(newFilters);
+    setPage(1);
+  };
 
   useEffect(() => {
     const fetchHospitals = async () => {
@@ -82,12 +123,23 @@ function SearchContent() {
   const handleMarkerClick = (id: string) => {
     setSelectedId(id);
     setMobileTab("list");
-    setTimeout(() => {
-      document.getElementById(`hospital-${id}`)?.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-      });
-    }, 100);
+
+    const hospitalIndex = hospitals.findIndex((h) => h.id === id);
+    if (hospitalIndex === -1) return;
+
+    const targetPage = Math.floor(hospitalIndex / HOSPITALS_PER_PAGE) + 1;
+
+    if (targetPage !== page) {
+      pendingScrollId.current = id;
+      setPage(targetPage);
+    } else {
+      setTimeout(() => {
+        document.getElementById(`hospital-${id}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }, 50);
+    }
   };
 
   const exportCSV = () => {
@@ -152,9 +204,13 @@ function SearchContent() {
               {hospitals.length}
             </span>{" "}
             hospital{hospitals.length !== 1 ? "s" : ""} found
+            {totalPages > 1 && (
+              <span className="text-slate-400 ml-1">
+                · page {page} of {totalPages}
+              </span>
+            )}
           </p>
           <div className="flex items-center gap-2">
-            {/* Mobile tab toggle */}
             <div className="flex lg:hidden gap-1 bg-gray-100 p-1 rounded-xl">
               <button
                 onClick={() => setMobileTab("list")}
@@ -205,6 +261,7 @@ function SearchContent() {
       <div className="flex-1 overflow-hidden flex">
         {/* Hospital list */}
         <div
+          ref={listRef}
           className={`w-full lg:w-[420px] lg:flex-shrink-0 overflow-y-auto bg-gray-50 border-r border-gray-100 p-3 space-y-3 ${
             mobileTab === "map" ? "hidden lg:block" : "block"
           }`}
@@ -223,14 +280,59 @@ function SearchContent() {
               </p>
             </div>
           ) : (
-            hospitals.map((hospital) => (
-              <div key={hospital.id} id={`hospital-${hospital.id}`}>
-                <HospitalCard
-                  hospital={hospital}
-                  highlighted={selectedId === hospital.id}
-                />
-              </div>
-            ))
+            <>
+              {paginatedHospitals.map((hospital) => (
+                <div key={hospital.id} id={`hospital-${hospital.id}`}>
+                  <HospitalCard
+                    hospital={hospital}
+                    highlighted={selectedId === hospital.id}
+                  />
+                </div>
+              ))}
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-1 py-4 border-t border-gray-100 mt-1">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 text-slate-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ←
+                  </button>
+
+                  {getPageNumbers(page, totalPages).map((p, i) =>
+                    p === "..." ? (
+                      <span
+                        key={`ellipsis-${i}`}
+                        className="px-1.5 text-slate-400 text-xs"
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p as number)}
+                        className={`w-8 h-8 text-xs rounded-lg font-medium transition-colors ${
+                          page === p
+                            ? "bg-emerald-600 text-white"
+                            : "border border-gray-200 text-slate-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ),
+                  )}
+
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="px-2.5 py-1.5 text-xs rounded-lg border border-gray-200 text-slate-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 

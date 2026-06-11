@@ -15,6 +15,8 @@ import {
   Search,
   CheckCircle,
   UserPlus,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 interface Review {
@@ -33,10 +35,18 @@ interface Toast {
   type: "success" | "error";
 }
 
+const PAGE_SIZE = 15;
+
 export default function AdminPage() {
   const adminLoading = useRequireAdmin();
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [hospitalCount, setHospitalCount] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [hospitalPage, setHospitalPage] = useState(0);
+  const [reviewPage, setReviewPage] = useState(0);
+  const [hospitalLoading, setHospitalLoading] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"hospitals" | "reviews">(
     "hospitals",
@@ -65,26 +75,57 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (adminLoading) return;
-
-    const fetchHospitals = async () => {
-      const { data } = await supabase
+    let cancelled = false;
+    const run = async () => {
+      setHospitalLoading(true);
+      let query = supabase
         .from("hospitals")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (data) setHospitals(data as Hospital[]);
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(hospitalPage * PAGE_SIZE, (hospitalPage + 1) * PAGE_SIZE - 1);
+      if (hospitalSearch.trim()) {
+        query = query.or(
+          `name.ilike.%${hospitalSearch}%,city.ilike.%${hospitalSearch}%,state.ilike.%${hospitalSearch}%`,
+        );
+      }
+      const { data, count } = await query;
+      if (!cancelled) {
+        if (data) setHospitals(data as Hospital[]);
+        if (count !== null) setHospitalCount(count);
+        setHospitalLoading(false);
+      }
     };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [adminLoading, hospitalPage, hospitalSearch]);
 
-    const fetchReviews = async () => {
-      const { data } = await supabase
+  useEffect(() => {
+    if (adminLoading) return;
+    let cancelled = false;
+    const run = async () => {
+      setReviewLoading(true);
+      let query = supabase
         .from("reviews")
-        .select("*, hospital:hospital_id(name)")
-        .order("created_at", { ascending: false });
-      if (data) setReviews(data as Review[]);
+        .select("*, hospital:hospital_id(name)", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(reviewPage * PAGE_SIZE, (reviewPage + 1) * PAGE_SIZE - 1);
+      if (reviewSearch.trim()) {
+        query = query.or(`comment.ilike.%${reviewSearch}%`);
+      }
+      const { data, count } = await query;
+      if (!cancelled) {
+        if (data) setReviews(data as Review[]);
+        if (count !== null) setReviewCount(count);
+        setReviewLoading(false);
+      }
     };
-
-    void fetchHospitals();
-    void fetchReviews();
-  }, [adminLoading]);
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [adminLoading, reviewPage, reviewSearch]);
 
   const deleteHospital = async (id: string) => {
     if (!confirm("Delete this hospital? This cannot be undone.")) return;
@@ -94,6 +135,7 @@ export default function AdminPage() {
       showToast("Delete failed: " + error.message, "error");
     } else {
       setHospitals((prev) => prev.filter((h) => h.id !== id));
+      setHospitalCount((prev) => prev - 1);
       showToast("Hospital deleted.");
     }
     setDeleting(null);
@@ -122,6 +164,7 @@ export default function AdminPage() {
       return;
     }
     setReviews((prev) => prev.filter((r) => r.id !== id));
+    setReviewCount((prev) => prev - 1);
     showToast("Review deleted.");
   };
 
@@ -149,18 +192,9 @@ export default function AdminPage() {
     }
   };
 
-  const filteredHospitals = hospitals.filter(
-    (h) =>
-      h.name.toLowerCase().includes(hospitalSearch.toLowerCase()) ||
-      h.city.toLowerCase().includes(hospitalSearch.toLowerCase()) ||
-      h.state.toLowerCase().includes(hospitalSearch.toLowerCase()),
-  );
-
-  const filteredReviews = reviews.filter(
-    (r) =>
-      r.hospital?.name?.toLowerCase().includes(reviewSearch.toLowerCase()) ||
-      r.comment?.toLowerCase().includes(reviewSearch.toLowerCase()),
-  );
+  const hospitalTotalPages = Math.ceil(hospitalCount / PAGE_SIZE);
+  const reviewTotalPages = Math.ceil(reviewCount / PAGE_SIZE);
+  const pendingReviews = reviews.filter((r) => !r.approved).length;
 
   if (adminLoading)
     return (
@@ -168,8 +202,6 @@ export default function AdminPage() {
         <p className="text-slate-400 text-sm">Loading...</p>
       </div>
     );
-
-  const pendingReviews = reviews.filter((r) => !r.approved).length;
 
   return (
     <main className="min-h-[calc(100vh-65px)] bg-gray-50">
@@ -201,11 +233,11 @@ export default function AdminPage() {
             </h1>
             <p className="text-sm text-slate-500 mt-1">
               <span className="font-semibold text-slate-700">
-                {hospitals.length}
+                {hospitalCount}
               </span>{" "}
               hospitals ·{" "}
               <span className="font-semibold text-slate-700">
-                {reviews.length}
+                {reviewCount}
               </span>{" "}
               reviews
               {pendingReviews > 0 && (
@@ -282,7 +314,10 @@ export default function AdminPage() {
                 type="text"
                 placeholder="Search hospitals..."
                 value={hospitalSearch}
-                onChange={(e) => setHospitalSearch(e.target.value)}
+                onChange={(e) => {
+                  setHospitalSearch(e.target.value);
+                  setHospitalPage(0);
+                }}
                 className="text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none flex-1"
               />
               {hospitalSearch && (
@@ -301,58 +336,63 @@ export default function AdminPage() {
 
             {/* Mobile cards */}
             <div className="space-y-3 md:hidden">
-              {filteredHospitals.map((h) => (
-                <div
-                  key={h.id}
-                  className="bg-white rounded-2xl border border-gray-100 p-4"
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div>
-                      <h2 className="font-semibold text-slate-900 text-sm">
-                        {h.name}
-                      </h2>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {h.city}, {h.state}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
-                        h.ownership === "public"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-purple-50 text-purple-700"
-                      }`}
-                    >
-                      {h.ownership}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 mb-3">
-                    Rating: {h.rating ?? "—"}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() =>
-                        router.push(`/admin/hospitals/${h.id}/edit`)
-                      }
-                      className="flex items-center justify-center gap-1.5 border border-gray-200 text-slate-700 px-3 py-2 rounded-lg text-xs hover:bg-gray-50 transition-colors"
-                    >
-                      <Pencil size={13} />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => deleteHospital(h.id)}
-                      disabled={deleting === h.id}
-                      className="flex items-center justify-center gap-1.5 bg-red-50 text-red-600 border border-red-100 px-3 py-2 rounded-lg text-xs hover:bg-red-100 transition-colors disabled:opacity-50"
-                    >
-                      <Trash2 size={13} />
-                      {deleting === h.id ? "..." : "Delete"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {filteredHospitals.length === 0 && (
+              {hospitalLoading ? (
+                <p className="text-sm text-slate-400 text-center py-8">
+                  Loading...
+                </p>
+              ) : hospitals.length === 0 ? (
                 <p className="text-sm text-slate-400 text-center py-8">
                   No hospitals match your search.
                 </p>
+              ) : (
+                hospitals.map((h) => (
+                  <div
+                    key={h.id}
+                    className="bg-white rounded-2xl border border-gray-100 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <h2 className="font-semibold text-slate-900 text-sm">
+                          {h.name}
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {h.city}, {h.state}
+                        </p>
+                      </div>
+                      <span
+                        className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
+                          h.ownership === "public"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-purple-50 text-purple-700"
+                        }`}
+                      >
+                        {h.ownership}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mb-3">
+                      Rating: {h.rating ?? "—"}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() =>
+                          router.push(`/admin/hospitals/${h.id}/edit`)
+                        }
+                        className="flex items-center justify-center gap-1.5 border border-gray-200 text-slate-700 px-3 py-2 rounded-lg text-xs hover:bg-gray-50 transition-colors"
+                      >
+                        <Pencil size={13} />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteHospital(h.id)}
+                        disabled={deleting === h.id}
+                        className="flex items-center justify-center gap-1.5 bg-red-50 text-red-600 border border-red-100 px-3 py-2 rounded-lg text-xs hover:bg-red-100 transition-colors disabled:opacity-50"
+                      >
+                        <Trash2 size={13} />
+                        {deleting === h.id ? "..." : "Delete"}
+                      </button>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
 
@@ -379,7 +419,16 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredHospitals.length === 0 ? (
+                  {hospitalLoading ? (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-5 py-10 text-center text-sm text-slate-400"
+                      >
+                        Loading...
+                      </td>
+                    </tr>
+                  ) : hospitals.length === 0 ? (
                     <tr>
                       <td
                         colSpan={5}
@@ -389,7 +438,7 @@ export default function AdminPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredHospitals.map((h) => (
+                    hospitals.map((h) => (
                       <tr
                         key={h.id}
                         className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
@@ -439,6 +488,18 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Hospital pagination */}
+            {hospitalTotalPages > 1 && (
+              <Pagination
+                page={hospitalPage}
+                totalPages={hospitalTotalPages}
+                total={hospitalCount}
+                pageSize={PAGE_SIZE}
+                onPrev={() => setHospitalPage((p) => p - 1)}
+                onNext={() => setHospitalPage((p) => p + 1)}
+              />
+            )}
           </>
         )}
 
@@ -452,7 +513,10 @@ export default function AdminPage() {
                 type="text"
                 placeholder="Search reviews..."
                 value={reviewSearch}
-                onChange={(e) => setReviewSearch(e.target.value)}
+                onChange={(e) => {
+                  setReviewSearch(e.target.value);
+                  setReviewPage(0);
+                }}
                 className="text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none flex-1"
               />
               {reviewSearch && (
@@ -460,7 +524,6 @@ export default function AdminPage() {
                   type="button"
                   onClick={() => setReviewSearch("")}
                   aria-label="Clear review search"
-                  title="Clear review search"
                 >
                   <X
                     size={13}
@@ -472,14 +535,18 @@ export default function AdminPage() {
 
             {/* Mobile cards */}
             <div className="space-y-3 md:hidden">
-              {filteredReviews.length === 0 ? (
+              {reviewLoading ? (
+                <p className="text-sm text-slate-400 text-center py-8">
+                  Loading...
+                </p>
+              ) : reviews.length === 0 ? (
                 <p className="text-sm text-slate-400 text-center py-8">
                   {reviewSearch
                     ? "No reviews match your search."
                     : "No reviews yet."}
                 </p>
               ) : (
-                filteredReviews.map((r) => (
+                reviews.map((r) => (
                   <div
                     key={r.id}
                     className="bg-white rounded-2xl border border-gray-100 p-4"
@@ -533,7 +600,9 @@ export default function AdminPage() {
 
             {/* Desktop table */}
             <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
-              {filteredReviews.length === 0 ? (
+              {reviewLoading ? (
+                <p className="text-slate-400 text-sm p-6">Loading...</p>
+              ) : reviews.length === 0 ? (
                 <p className="text-slate-400 text-sm p-6">
                   {reviewSearch
                     ? "No reviews match your search."
@@ -561,7 +630,7 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredReviews.map((r) => (
+                    {reviews.map((r) => (
                       <tr
                         key={r.id}
                         className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
@@ -620,6 +689,18 @@ export default function AdminPage() {
                 </table>
               )}
             </div>
+
+            {/* Review pagination */}
+            {reviewTotalPages > 1 && (
+              <Pagination
+                page={reviewPage}
+                totalPages={reviewTotalPages}
+                total={reviewCount}
+                pageSize={PAGE_SIZE}
+                onPrev={() => setReviewPage((p) => p - 1)}
+                onNext={() => setReviewPage((p) => p + 1)}
+              />
+            )}
           </>
         )}
       </div>
@@ -677,5 +758,53 @@ export default function AdminPage() {
         </div>
       )}
     </main>
+  );
+}
+
+function Pagination({
+  page,
+  totalPages,
+  total,
+  pageSize,
+  onPrev,
+  onNext,
+}: {
+  page: number;
+  totalPages: number;
+  total: number;
+  pageSize: number;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const from = page * pageSize + 1;
+  const to = Math.min((page + 1) * pageSize, total);
+
+  return (
+    <div className="flex items-center justify-between mt-4 px-1">
+      <p className="text-xs text-slate-400">
+        Showing {from}–{to} of {total}
+      </p>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onPrev}
+          disabled={page === 0}
+          className="flex items-center gap-1 border border-gray-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <ChevronLeft size={13} />
+          Prev
+        </button>
+        <span className="text-xs text-slate-500">
+          {page + 1} / {totalPages}
+        </span>
+        <button
+          onClick={onNext}
+          disabled={page >= totalPages - 1}
+          className="flex items-center gap-1 border border-gray-200 text-slate-600 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Next
+          <ChevronRight size={13} />
+        </button>
+      </div>
+    </div>
   );
 }
